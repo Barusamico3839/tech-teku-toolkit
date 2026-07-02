@@ -29,6 +29,29 @@ cd tech-teku-toolkit
 bash install/setup.sh
 ```
 
+### Prerequisites (curated plugins)
+
+The brainstorm overlay (`install/brainstorm.json`) enables 5 external plugins by name, and
+`clbs-run` launches with `--settings`, which **replaces** the whole plugin map rather than
+merging it — so a fresh machine needs these installed for the full curated set to actually
+show up in the brainstorm window. `claude-plugins-official` is preinstalled with Claude Code
+by default, so only the `everything-claude-code` marketplace needs adding:
+
+```
+/plugin marketplace add affaan-m/everything-claude-code
+/plugin install superpowers@claude-plugins-official
+/plugin install frontend-design@claude-plugins-official
+/plugin install firecrawl@claude-plugins-official
+/plugin install notion@claude-plugins-official
+/plugin install everything-claude-code@everything-claude-code
+```
+
+Any of these that aren't installed are silently ignored — the brainstorm window still opens
+and works, just without that plugin's commands/skills. And because the overlay replaces the
+whole `enabledPlugins` map, any plugin **not** listed above (including ones enabled in your
+normal `~/.claude/settings.json`) is disabled inside the brainstorm window — that's the
+curation working as intended, not a bug.
+
 ## What the plugin can and can't carry
 
 The plugin **does** ship: the `/clbs` `/en` `/jp` commands and the brainstorm
