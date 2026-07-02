@@ -2,7 +2,7 @@
 
 [![tests](https://github.com/Barusamico3839/tech-teku-toolkit/actions/workflows/test.yml/badge.svg)](https://github.com/Barusamico3839/tech-teku-toolkit/actions/workflows/test.yml)
 
-Hikaru's toolkit of Claude Code **harness** plugins, distributed as one marketplace.
+Tech-Teku's toolkit of Claude Code **harness** plugins, distributed as one marketplace.
 
 ## Plugins
 
