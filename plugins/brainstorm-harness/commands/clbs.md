@@ -1,5 +1,6 @@
 ---
 description: Open a fresh light-themed Brainstorm window (Windows Terminal)
+allowed-tools: Bash(wt.exe -w new -p Brainstorm)
 ---
 
 Open a new brainstorming window for the user.
