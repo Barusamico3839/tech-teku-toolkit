@@ -6,6 +6,7 @@
 - **公開**: GitHub Public
 - **開発の流儀**: ライト版ハーネスエンジニアリング（spec → plan → implement → verify。要検証ポイントはインライン確認。bootstrap-log は簡易メモ）
 - **関連ログ**: `docs/bootstrap-log/2026-07-02-verify-0.md`（技術前提のインライン検証メモ）
+- **注**: 本書は設計時点のスナップショット。実装（`install/`・README）と差異がある箇所は実装が正。
 
 ---
 
@@ -40,7 +41,7 @@
 
 | # | ユニット | 何をする | 依存 | 配布層 |
 |---|---|---|---|---|
-| U1 | **WT プロファイル + カラースキーム**（`install/sunrise-cream.jsonc`） | 「明るい独立窓」を提供。`Sunrise Cream` スキーム＋`Brainstorm` プロファイル | Windows Terminal | install/（setup で適用） |
+| U1 | **WT プロファイル + カラースキーム**（`install/sunrise-cream.json`） | 「明るい独立窓」を提供。`Sunrise Cream` スキーム＋`Brainstorm` プロファイル | Windows Terminal | install/（setup で適用） |
 | U2 | **起動スクリプト**（`install/clbs`, `install/clbs-run`） | `clbs`＝新しい明るい窓を開く。`clbs-run`＝バナー表示→ブレストモード Claude Code を exec | wt.exe / cux or claude | install/（setup で `~/.local/bin` へ） |
 | U3 | **Claude 設定オーバーレイ**（`install/brainstorm.json`） | ライトテーマ・bypass・厳選 `enabledPlugins`・statusLine・言語デフォルト | claude `--settings` | install/（setup で `~/.claude/` へ） |
 | U4 | **プラグイン**（`plugins/brainstorm-harness/`） | コマンド（`/clbs` `/en` `/jp`）・SessionStart フック（挨拶/言語の文脈注入）・statusline スクリプト・(任意)ブレストスキル | Claude Code plugin loader | marketplace（`install` で有効化） |
@@ -131,7 +132,7 @@ tech-teku-toolkit/                         # ← GitHub Public。push = クラ�
 │   └─ (将来) harnesseed/                  # slot だけ用意。README に導線
 ├─ install/
 │   ├─ brainstorm.json                     # U3 Claude 設定オーバーレイ
-│   ├─ sunrise-cream.jsonc                 # U1 WT スキーム＋プロファイル片
+│   ├─ sunrise-cream.json                 # U1 WT スキーム＋プロファイル片
 │   ├─ clbs, clbs-run                      # U2 起動スクリプト
 │   └─ setup.sh                            # U1–U3 を各マシンに冪等適用
 └─ README.md                               # 導入手順・トレードオフ明記
