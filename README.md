@@ -31,8 +31,10 @@ bash install/setup.sh
 
 ## What the plugin can and can't carry
 
-The plugin **does** ship: the `/clbs` `/en` `/jp` commands, the brainstorm
-SessionStart greeting, and the statusline — these activate on `install`.
+The plugin **does** ship: the `/clbs` `/en` `/jp` commands and the brainstorm
+SessionStart greeting — these activate on `install`. The statusline script
+rides along in the plugin too, but plugins can't auto-enable statuslines —
+it lights up via the `~/.claude/brainstorm.json` overlay that `setup.sh` writes.
 
 The plugin **does NOT** ship (a plugin can't): the terminal window color, the
 light theme, bypass permissions, or the `clbs` launcher. Those are host/user
