@@ -1,0 +1,34 @@
+{
+  "scheme": {
+    "name": "Sunrise Cream",
+    "background": "#FFF8F0",
+    "foreground": "#4A4137",
+    "cursorColor": "#E8871E",
+    "selectionBackground": "#F3E1C7",
+    "black": "#4A4137",
+    "red": "#D6564B",
+    "green": "#5E9E4A",
+    "yellow": "#E8871E",
+    "blue": "#3A8FB7",
+    "purple": "#9A6FB0",
+    "cyan": "#2FA6A6",
+    "white": "#EDE4D6",
+    "brightBlack": "#8A7F70",
+    "brightRed": "#E4756B",
+    "brightGreen": "#77B85F",
+    "brightYellow": "#F2A24A",
+    "brightBlue": "#57A6C9",
+    "brightPurple": "#B588C6",
+    "brightCyan": "#4FBDBD",
+    "brightWhite": "#FFF8F0"
+  },
+  "profile": {
+    "name": "Brainstorm",
+    "commandline": "wsl.exe -d __WSL_DISTRO__ -- bash -lc ~/.local/bin/clbs-run",
+    "colorScheme": "Sunrise Cream",
+    "tabTitle": "🌱 Brainstorm",
+    "icon": "🌱",
+    "font": { "size": 13 },
+    "useAcrylic": false
+  }
+}
