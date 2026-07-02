@@ -2,7 +2,8 @@
   "name": "tech-teku-toolkit",
   "owner": { "name": "hikaru" },
   "metadata": {
-    "description": "Hikaru's toolkit of Claude Code harness plugins."
+    "description": "Hikaru's toolkit of Claude Code harness plugins.",
+    "version": "0.1.0"
   },
   "plugins": [
     {
