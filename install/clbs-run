@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# clbs-run — runs INSIDE the Brainstorm window. Prints the banner, then execs
+# Claude Code with the brainstorm overlay. cux if present, else claude.
+set -euo pipefail
+
+cd "$HOME" 2>/dev/null || true
+OVERLAY="$HOME/.claude/brainstorm.json"
+
+# Guard against running before install/setup.sh has written the overlay.
+# Dry-run smoke tests bypass this so they can exercise the command-building
+# logic against a fake HOME without needing to fabricate the overlay file.
+if [ "${CLBS_DRY_RUN:-}" != "1" ] && [ ! -f "$OVERLAY" ]; then
+  echo "clbs-run: overlay not found at $OVERLAY — run install/setup.sh first." >&2
+  exit 1
+fi
+
+if command -v cux >/dev/null 2>&1; then
+  LAUNCH=(cux --settings "$OVERLAY" --permission-mode bypassPermissions)
+else
+  LAUNCH=(claude --settings "$OVERLAY" --permission-mode bypassPermissions)
+fi
+
+print_banner() {
+  cat <<'EOF'
+
+    🌱  B R A I N S T O R M   S P A C E
+    ────────────────────────────────────────────
+    no wrong ideas here — what shall we dream up today?
+    (switch language anytime:  /jp  ·  /en )
+
+EOF
+}
+
+if [ "${CLBS_DRY_RUN:-}" = "1" ]; then
+  print_banner
+  echo "would exec: BRAINSTORM_MODE=1 ${LAUNCH[*]}"
+  exit 0
+fi
+
+print_banner
+export BRAINSTORM_MODE=1
+exec "${LAUNCH[@]}"

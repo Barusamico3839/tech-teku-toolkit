@@ -1,0 +1,19 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  setup-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate plugin + marketplace manifests
+        run: |
+          python3 -c "import json; json.load(open('.claude-plugin/marketplace.json'))"
+          python3 -c "import json; json.load(open('plugins/brainstorm-harness/.claude-plugin/plugin.json'))"
+          python3 -c "import json; json.load(open('plugins/brainstorm-harness/hooks/hooks.json'))"
+      - name: Run setup integration tests
+        run: bash install/test-setup.sh
