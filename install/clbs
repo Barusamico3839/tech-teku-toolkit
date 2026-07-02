@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# clbs — open a fresh light-themed Brainstorm window (Windows Terminal).
+set -euo pipefail
+
+CMD=(wt.exe -w new -p Brainstorm)
+
+if [ "${CLBS_DRY_RUN:-}" = "1" ]; then
+  echo "${CMD[*]}"
+  exit 0
+fi
+
+if ! command -v wt.exe >/dev/null 2>&1; then
+  echo "clbs: wt.exe not found (need WSL + Windows Terminal). Launching brainstorm mode in this terminal instead." >&2
+  exec "$(dirname "$0")/clbs-run"
+fi
+
+exec "${CMD[@]}"
