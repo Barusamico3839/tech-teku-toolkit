@@ -24,7 +24,7 @@
   },
   "profile": {
     "name": "Brainstorm",
-    "commandline": "wsl.exe -d __WSL_DISTRO__ -- bash -lc ~/.local/bin/clbs-run",
+    "commandline": "wsl.exe -d __WSL_DISTRO__ -- bash -lc __CLBS_RUN__",
     "colorScheme": "Sunrise Cream",
     "tabTitle": "🌱 Brainstorm",
     "icon": "🌱",
