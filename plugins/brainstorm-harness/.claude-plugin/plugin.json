@@ -1,0 +1,7 @@
+{
+  "name": "brainstorm-harness",
+  "version": "0.1.0",
+  "description": "Open an independent, light-themed terminal for cheerful brainstorming with Claude Code — light theme, bypass, curated ideation skills, cheerful banner, EN/JP toggle.",
+  "author": { "name": "hikaru" },
+  "keywords": ["brainstorming", "harness", "theme", "ideation"]
+}

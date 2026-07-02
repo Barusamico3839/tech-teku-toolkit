@@ -1,0 +1,14 @@
+{
+  "name": "tech-teku-toolkit",
+  "owner": { "name": "hikaru" },
+  "metadata": {
+    "description": "Hikaru's toolkit of Claude Code harness plugins."
+  },
+  "plugins": [
+    {
+      "name": "brainstorm-harness",
+      "source": "./plugins/brainstorm-harness",
+      "description": "Open an independent, light-themed terminal for cheerful brainstorming."
+    }
+  ]
+}
