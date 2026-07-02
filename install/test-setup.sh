@@ -4,7 +4,10 @@ cd "$(dirname "$0")/.."           # repo root
 WORK="$(mktemp -d)"
 WORK2="$(mktemp -d)"
 WORK3="$(mktemp -d)"
-trap 'rm -rf "$WORK" "$WORK2" "$WORK3"' EXIT
+WORK4="$(mktemp -d)"
+WORK5="$(mktemp -d)"
+WORK6="$(mktemp -d)"
+trap 'rm -rf "$WORK" "$WORK2" "$WORK3" "$WORK4" "$WORK5" "$WORK6"' EXIT
 
 # Fake a minimal Windows Terminal settings.json
 cat > "$WORK/wt.json" <<'JSON'
@@ -47,6 +50,9 @@ assert len(schemes)==1, "scheme not idempotent: %d"%len(schemes)
 assert len(profs)==1, "profile not idempotent: %d"%len(profs)
 assert "__WSL_DISTRO__" not in profs[0]["commandline"]
 assert "wsl.exe -d Ubuntu" in profs[0]["commandline"]
+# clbs-run placeholder resolved to the (TT_BIN_DIR-relative) install path
+assert "__CLBS_RUN__" not in profs[0]["commandline"]
+assert os.path.join(w, "bin", "clbs-run") in profs[0]["commandline"]
 assert profs[0]["guid"].startswith("{") and profs[0]["guid"].endswith("}")
 # GUID identity preserved across the idempotent re-run (not regenerated)
 first_guid = os.environ["FIRST_GUID"]
@@ -158,3 +164,107 @@ assert after == orig, "JSONC WT settings file was modified"
 assert not os.path.exists(os.path.join(w, "wt.json.tt-backup")), "unexpected .tt-backup for JSONC file"
 print("setup jsonc-scenario OK")
 PY
+
+# --- Scenario 4: WT settings uses the flat-array "profiles": [...] form -
+# Spec: Windows Terminal legally allows "profiles" to be either the object
+# form {"list": [...]} or a flat array [...]. setup.sh must detect whichever
+# shape is present, merge into it without crashing, and write back the SAME
+# shape (never silently convert the user's file to the other form).
+cat > "$WORK4/wt.json" <<'JSON'
+{ "profiles": [ { "name": "Ubuntu", "guid": "{25abb833-a701-5cc1-9dc2-cf33e62fd10b}" } ], "schemes": [] }
+JSON
+
+run_flat() {
+  TT_CLAUDE_DIR="$WORK4/claude" TT_BIN_DIR="$WORK4/bin" \
+  TT_WT_SETTINGS="$WORK4/wt.json" TT_WSL_DISTRO="Ubuntu" \
+  bash install/setup.sh >/dev/null
+}
+
+run_flat   # first install
+
+FLAT_GUID="$(python3 -c "import json; wt=json.load(open('$WORK4/wt.json')); print(next(p['guid'] for p in wt['profiles'] if p['name']=='Brainstorm'))")"
+
+run_flat   # second install (must stay idempotent)
+
+FLAT_GUID="$FLAT_GUID" python3 - "$WORK4" <<'PY'
+import json, os, sys
+w = sys.argv[1]
+wt = json.load(open(os.path.join(w, "wt.json")))
+# shape preserved: "profiles" is still a flat array, not converted to {"list": [...]}
+assert isinstance(wt["profiles"], list), "flat-array shape was not preserved on write-back"
+profs = [p for p in wt["profiles"] if p["name"] == "Brainstorm"]
+assert len(profs) == 1, "profile not idempotent in flat-array shape: %d" % len(profs)
+assert "wsl.exe -d Ubuntu" in profs[0]["commandline"]
+assert any(p["name"] == "Ubuntu" for p in wt["profiles"]), "original flat-array profile lost"
+first_guid = os.environ["FLAT_GUID"]
+assert profs[0]["guid"] == first_guid, \
+    "flat-array profile GUID changed across runs: %s -> %s" % (first_guid, profs[0]["guid"])
+print("setup flat-array-scenario OK")
+PY
+
+# --- Scenario 5: TT_WT_SETTINGS="" (set-but-empty) means SKIP, not auto- -
+# ------------------------------------------------------------------------
+# Spec: an explicitly empty TT_WT_SETTINGS must skip the WT section outright
+# — it must NOT fall through to auto-detecting the real machine's Windows
+# Terminal settings.json (that would risk touching this developer's actual
+# settings.json, exactly the thing this whole test suite exists to avoid).
+run_empty() {
+  TT_CLAUDE_DIR="$WORK5/claude" TT_BIN_DIR="$WORK5/bin" \
+  TT_WT_SETTINGS="" TT_WSL_DISTRO="Ubuntu" \
+  bash install/setup.sh
+}
+
+set +e
+EMPTY_OUT="$(run_empty 2>&1)"
+EMPTY_RC=$?
+set -e
+
+if [ "$EMPTY_RC" -ne 0 ]; then
+  echo "expected exit 0 for set-but-empty TT_WT_SETTINGS, got $EMPTY_RC" >&2
+  echo "$EMPTY_OUT" >&2
+  exit 1
+fi
+
+if ! grep -q "skipping the light-window setup" <<<"$EMPTY_OUT"; then
+  echo "missing graceful-skip warning for set-but-empty TT_WT_SETTINGS:" >&2
+  echo "$EMPTY_OUT" >&2
+  exit 1
+fi
+
+python3 - "$WORK5" <<'PY'
+import os, sys, stat
+w = sys.argv[1]
+# claude-dir / bin-dir artifacts still installed despite the skipped WT step
+for p in ["bin/clbs", "bin/clbs-run", "claude/brainstorm-statusline.sh"]:
+    fp = os.path.join(w, p); assert os.path.exists(fp), p
+    assert os.stat(fp).st_mode & stat.S_IXUSR, "not executable: " + p
+print("setup empty-TT_WT_SETTINGS-scenario OK")
+PY
+
+# --- Scenario 6: launcher dry-run smokes (installed clbs / clbs-run) ----
+# Spec: run the INSTALLED launchers (not the repo source) under
+# CLBS_DRY_RUN=1 and check their exact/contained output, with no writes to
+# the real HOME. Reuses the $WORK/bin install from Scenario 1 above (already
+# idempotent-verified); $WORK6 stands in as a fake HOME for clbs-run only.
+CLBS_OUT="$(CLBS_DRY_RUN=1 "$WORK/bin/clbs")"
+if [ "$CLBS_OUT" != "wt.exe -w new -p Brainstorm" ]; then
+  echo "clbs dry-run smoke failed, got: $CLBS_OUT" >&2
+  exit 1
+fi
+
+CLBS_RUN_OUT="$(CLBS_DRY_RUN=1 HOME="$WORK6" "$WORK/bin/clbs-run")"
+FAKE_OVERLAY="$WORK6/.claude/brainstorm.json"
+for needle in "--settings" "$FAKE_OVERLAY" "--permission-mode bypassPermissions"; do
+  if ! grep -qF -- "$needle" <<<"$CLBS_RUN_OUT"; then
+    echo "clbs-run dry-run smoke missing '$needle' in output:" >&2
+    echo "$CLBS_RUN_OUT" >&2
+    exit 1
+  fi
+done
+# the guard for a missing overlay must not fire under dry-run, and dry-run
+# must not create anything under the fake HOME either
+if [ -e "$WORK6/.claude" ]; then
+  echo "clbs-run dry-run smoke unexpectedly wrote under fake HOME: $WORK6/.claude" >&2
+  exit 1
+fi
+echo "launcher dry-run smokes OK"

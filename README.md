@@ -73,11 +73,32 @@ settings, so **`install/setup.sh` applies them once per machine**:
 - `python3` (used by `setup.sh`; no `jq` needed).
 - `cux` optional — falls back to `claude`.
 
+## Environment variables (setup.sh)
+
+- `TT_WT_SETTINGS` — controls how Windows Terminal's `settings.json` is found:
+  - **unset** (default): auto-detect it (stable channel, falling back to the
+    Preview channel's package path).
+  - **set to a path**: use that file.
+  - **set to `""` (empty)**: skip the Windows Terminal step entirely, even on
+    a real WT host — no auto-detect, no merge attempted.
+- `TT_CLAUDE_DIR` / `TT_BIN_DIR` — override the install locations (default
+  `~/.claude` / `~/.local/bin`). This is how `install/test-setup.sh` keeps
+  every scenario off the real machine.
+
 ## Notes
 
 - `theme: "light"` isn't officially documented; if `/config` rejects it, edit
   `~/.claude/brainstorm.json` (`light-daltonized` or `auto` also work — the
   window itself is already light).
 - bypass permissions applies **only** to the brainstorm window.
+- Re-running `setup.sh` **replaces** the `Brainstorm` scheme/profile every
+  time — any manual customization you made to it in Windows Terminal's
+  settings UI will be overwritten on the next run. The profile's GUID is
+  preserved across re-runs, so window/tab associations survive.
+- The `Brainstorm` profile's command line points at a resolved, absolute
+  path to `clbs-run` (honoring `TT_BIN_DIR` if you set it) rather than a
+  literal `~` — baked in at setup time, same as the WSL distro name.
+- If `~/.local/bin` (or your `TT_BIN_DIR`) isn't on `PATH`, `setup.sh` warns
+  after install — add it to `~/.bashrc` to use the `clbs` command directly.
 
 _Design + rationale: `plugins/brainstorm-harness/docs/superpowers/`._
