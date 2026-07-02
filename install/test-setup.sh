@@ -2,12 +2,16 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."           # repo root
 WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
+WORK2="$(mktemp -d)"
+trap 'rm -rf "$WORK" "$WORK2"' EXIT
 
 # Fake a minimal Windows Terminal settings.json
 cat > "$WORK/wt.json" <<'JSON'
 { "profiles": { "list": [ { "name": "Ubuntu", "guid": "{25abb833-a701-5cc1-9dc2-cf33e62fd10b}" } ] }, "schemes": [] }
 JSON
+# Pristine snapshot taken BEFORE any run touches the file, to verify the
+# one-time backup is an exact, unmodified copy of the original settings.
+cp "$WORK/wt.json" "$WORK/wt.json.orig"
 
 run() {
   TT_CLAUDE_DIR="$WORK/claude" TT_BIN_DIR="$WORK/bin" \
@@ -16,9 +20,14 @@ run() {
 }
 
 run   # first install
+
+# Capture the Brainstorm profile GUID minted by the first run so we can
+# assert it is preserved (not regenerated) by the second, idempotent run.
+FIRST_GUID="$(python3 -c "import json; wt=json.load(open('$WORK/wt.json')); print(next(p['guid'] for p in wt['profiles']['list'] if p['name']=='Brainstorm'))")"
+
 run   # second install (must stay idempotent)
 
-python3 - "$WORK" <<'PY'
+FIRST_GUID="$FIRST_GUID" python3 - "$WORK" <<'PY'
 import json, os, sys, stat
 w=sys.argv[1]
 # scripts installed + executable
@@ -38,9 +47,59 @@ assert len(profs)==1, "profile not idempotent: %d"%len(profs)
 assert "__WSL_DISTRO__" not in profs[0]["commandline"]
 assert "wsl.exe -d Ubuntu" in profs[0]["commandline"]
 assert profs[0]["guid"].startswith("{") and profs[0]["guid"].endswith("}")
+# GUID identity preserved across the idempotent re-run (not regenerated)
+first_guid = os.environ["FIRST_GUID"]
+assert profs[0]["guid"] == first_guid, \
+    "profile GUID changed across runs: %s -> %s" % (first_guid, profs[0]["guid"])
 # original Ubuntu profile preserved
 assert any(p["name"]=="Ubuntu" for p in wt["profiles"]["list"])
-# pristine backup exists
-assert os.path.exists(os.path.join(w,"wt.json.tt-backup"))
+# pristine backup exists and is byte-for-byte the untouched original
+# (taken before the first run, never overwritten by the second)
+backup_path = os.path.join(w,"wt.json.tt-backup")
+assert os.path.exists(backup_path), "backup missing"
+orig = open(os.path.join(w,"wt.json.orig")).read()
+backup = open(backup_path).read()
+assert backup == orig, "backup is not a pristine copy of the original settings"
 print("setup integration OK")
+PY
+
+# --- Scenario 2: WT settings not found -> graceful skip -----------------
+# Spec: when WT settings can't be located, setup.sh must still exit 0,
+# warn that the light-window setup is being skipped, and still install
+# the overlay/launchers/statusline.
+run_skip() {
+  TT_CLAUDE_DIR="$WORK2/claude" TT_BIN_DIR="$WORK2/bin" \
+  TT_WT_SETTINGS="$WORK2/does-not-exist/settings.json" TT_WSL_DISTRO="Ubuntu" \
+  bash install/setup.sh
+}
+
+set +e
+SKIP_OUT="$(run_skip 2>&1)"
+SKIP_RC=$?
+set -e
+
+if [ "$SKIP_RC" -ne 0 ]; then
+  echo "expected exit 0 when WT settings are missing, got $SKIP_RC" >&2
+  echo "$SKIP_OUT" >&2
+  exit 1
+fi
+
+if ! grep -q "skipping the light-window setup" <<<"$SKIP_OUT"; then
+  echo "missing graceful-skip warning in output:" >&2
+  echo "$SKIP_OUT" >&2
+  exit 1
+fi
+
+python3 - "$WORK2" <<'PY'
+import json, os, sys, stat
+w=sys.argv[1]
+# claude-dir / bin-dir artifacts still installed despite the missing WT settings
+for p in ["bin/clbs","bin/clbs-run","claude/brainstorm-statusline.sh"]:
+    fp=os.path.join(w,p); assert os.path.exists(fp), p
+    assert os.stat(fp).st_mode & stat.S_IXUSR, "not executable: "+p
+o=json.load(open(os.path.join(w,"claude/brainstorm.json")))
+assert "__STATUSLINE_CMD__" not in json.dumps(o)
+# no WT settings file should have been created out of thin air
+assert not os.path.exists(os.path.join(w,"does-not-exist","settings.json"))
+print("setup skip-scenario OK")
 PY
