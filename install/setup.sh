@@ -14,11 +14,18 @@ WSL_DISTRO="${TT_WSL_DISTRO:-${WSL_DISTRO_NAME:-Ubuntu}}"
 if [ "${TT_WT_SETTINGS+x}" = "x" ]; then
   WT_SETTINGS="$TT_WT_SETTINGS"
 else
-  WT_SETTINGS="$(ls /mnt/c/Users/*/AppData/Local/Packages/Microsoft.WindowsTerminal_*/LocalState/settings.json 2>/dev/null | head -n1 || true)"
-  if [ -z "$WT_SETTINGS" ]; then
+  WT_CANDIDATES="$(ls /mnt/c/Users/*/AppData/Local/Packages/Microsoft.WindowsTerminal_*/LocalState/settings.json 2>/dev/null || true)"
+  if [ -z "$WT_CANDIDATES" ]; then
     # Windows Terminal Preview installs under a different package id; try it
     # second so a stable-channel install is always preferred when both exist.
-    WT_SETTINGS="$(ls /mnt/c/Users/*/AppData/Local/Packages/Microsoft.WindowsTerminalPreview_*/LocalState/settings.json 2>/dev/null | head -n1 || true)"
+    WT_CANDIDATES="$(ls /mnt/c/Users/*/AppData/Local/Packages/Microsoft.WindowsTerminalPreview_*/LocalState/settings.json 2>/dev/null || true)"
+  fi
+  WT_SETTINGS="$(printf '%s\n' "$WT_CANDIDATES" | head -n1)"
+  # The glob spans every Windows user profile readable from WSL; on a
+  # multi-user machine the first match may belong to a different account.
+  if [ -n "$WT_CANDIDATES" ] && [ "$(printf '%s\n' "$WT_CANDIDATES" | wc -l)" -gt 1 ]; then
+    echo "⚠ multiple Windows Terminal settings.json files found; using: $WT_SETTINGS" >&2
+    echo "  (set TT_WT_SETTINGS to a specific path to pick a different one)" >&2
   fi
 fi
 
@@ -66,7 +73,7 @@ if [ -z "$WT_SETTINGS" ] || [ ! -f "$WT_SETTINGS" ]; then
 else
   set +e
   SRC="$SCRIPT_DIR/sunrise-cream.json" WT="$WT_SETTINGS" DISTRO="$WSL_DISTRO" BIN_DIR="$BIN_DIR" python3 - <<'PY'
-import json, os, shutil, sys
+import json, os, shlex, shutil, sys
 
 wtp = os.environ['WT']
 
@@ -93,9 +100,11 @@ bin_dir = os.environ['BIN_DIR']
 
 scheme  = src['scheme']
 profile = dict(src['profile'])
+# shlex.quote leaves a plain absolute path untouched and shields the
+# `bash -lc` word-splitting if BIN_DIR ever contains spaces or quotes.
 profile['commandline'] = profile['commandline'] \
     .replace('__WSL_DISTRO__', distro) \
-    .replace('__CLBS_RUN__', os.path.join(bin_dir, 'clbs-run'))
+    .replace('__CLBS_RUN__', shlex.quote(os.path.join(bin_dir, 'clbs-run')))
 
 # Windows Terminal legally allows "profiles" to be either the object form
 # {"list": [...], ...} or a flat array [...]. Detect which shape this file
@@ -160,8 +169,9 @@ else
   echo "ℹ cux not found — the Brainstorm window will launch via 'claude' (fallback)"
 fi
 
-# 6) PATH sanity check — the WT profile itself uses an absolute path to
-#    clbs-run (see item E), so this only affects invoking `clbs` directly.
+# 6) PATH sanity check — the WT profile embeds an absolute path to clbs-run
+#    (the __CLBS_RUN__ substitution in step 4), so this only affects invoking
+#    `clbs` directly.
 case ":$PATH:" in
   *":$BIN_DIR:"*) ;;
   *)
@@ -176,5 +186,5 @@ echo "       (or pick the 'Brainstorm' profile from Windows Terminal's + menu)"
 echo "Note:  confirm theme 'light' is accepted via /config; if not, edit $CLAUDE_DIR/brainstorm.json."
 echo
 echo "Also install the plugin itself inside Claude Code:"
-echo "  /plugin marketplace add <owner>/tech-teku-toolkit"
+echo "  /plugin marketplace add Barusamico3839/tech-teku-toolkit"
 echo "  /plugin install brainstorm-harness@tech-teku-toolkit"

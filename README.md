@@ -1,5 +1,7 @@
 # tech-teku-toolkit 🌱
 
+[![tests](https://github.com/Barusamico3839/tech-teku-toolkit/actions/workflows/test.yml/badge.svg)](https://github.com/Barusamico3839/tech-teku-toolkit/actions/workflows/test.yml)
+
 Hikaru's toolkit of Claude Code **harness** plugins, distributed as one marketplace.
 
 ## Plugins
@@ -17,17 +19,20 @@ ideation skills, a warm startup banner, and an EN/JP language toggle.
 ## Install (your machine or a friend's)
 
 ```
-/plugin marketplace add <owner>/tech-teku-toolkit
+/plugin marketplace add Barusamico3839/tech-teku-toolkit
 /plugin install brainstorm-harness@tech-teku-toolkit
 ```
 
-Then clone this repo (or use the marketplace cache) and run the one-time setup:
+Then clone this repo and run the one-time setup:
 
 ```
-git clone https://github.com/<owner>/tech-teku-toolkit
+git clone https://github.com/Barusamico3839/tech-teku-toolkit
 cd tech-teku-toolkit
 bash install/setup.sh
 ```
+
+(No clone needed if you already added the marketplace — run it from the cache:
+`bash ~/.claude/plugins/marketplaces/tech-teku-toolkit/install/setup.sh`.)
 
 ### Prerequisites (curated plugins)
 
@@ -84,13 +89,25 @@ settings, so **`install/setup.sh` applies them once per machine**:
 - `TT_CLAUDE_DIR` / `TT_BIN_DIR` — override the install locations (default
   `~/.claude` / `~/.local/bin`). This is how `install/test-setup.sh` keeps
   every scenario off the real machine.
+- `TT_WSL_DISTRO` — the WSL distro name baked into the Brainstorm profile's
+  command line (default: `$WSL_DISTRO_NAME`, falling back to `Ubuntu`).
+
+## Security note
+
+The brainstorm window runs Claude Code with **all permission prompts disabled**
+(`bypassPermissions`) — that's what makes it frictionless, and it applies only
+to that window, never to your normal sessions. Two consequences:
+
+- only brainstorm in directories you trust;
+- the curated set includes web-fetching plugins (firecrawl, notion), so fetched
+  content can trigger tool use without a confirmation prompt — don't point the
+  brainstorm window at untrusted URLs or workspaces.
 
 ## Notes
 
 - `theme: "light"` isn't officially documented; if `/config` rejects it, edit
   `~/.claude/brainstorm.json` (`light-daltonized` or `auto` also work — the
   window itself is already light).
-- bypass permissions applies **only** to the brainstorm window.
 - Re-running `setup.sh` **replaces** the `Brainstorm` scheme/profile every
   time — any manual customization you made to it in Windows Terminal's
   settings UI will be overwritten on the next run. The profile's GUID is
