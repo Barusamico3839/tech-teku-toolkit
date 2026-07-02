@@ -7,7 +7,7 @@ cd "$HOME" 2>/dev/null || true
 OVERLAY="$HOME/.claude/brainstorm.json"
 
 if command -v cux >/dev/null 2>&1; then
-  LAUNCH=(cux --settings "$OVERLAY")
+  LAUNCH=(cux --settings "$OVERLAY" --permission-mode bypassPermissions)
 else
   LAUNCH=(claude --settings "$OVERLAY" --permission-mode bypassPermissions)
 fi

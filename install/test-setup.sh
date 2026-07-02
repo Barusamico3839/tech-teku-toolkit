@@ -3,7 +3,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."           # repo root
 WORK="$(mktemp -d)"
 WORK2="$(mktemp -d)"
-trap 'rm -rf "$WORK" "$WORK2"' EXIT
+WORK3="$(mktemp -d)"
+trap 'rm -rf "$WORK" "$WORK2" "$WORK3"' EXIT
 
 # Fake a minimal Windows Terminal settings.json
 cat > "$WORK/wt.json" <<'JSON'
@@ -102,4 +103,58 @@ assert "__STATUSLINE_CMD__" not in json.dumps(o)
 # no WT settings file should have been created out of thin air
 assert not os.path.exists(os.path.join(w,"does-not-exist","settings.json"))
 print("setup skip-scenario OK")
+PY
+
+# --- Scenario 3: WT settings is JSONC (comments / trailing commas) ------
+# Spec: real Windows Terminal settings.json legally contains `//` comments
+# and trailing commas (JSONC), which strict json.load() rejects. setup.sh
+# must not traceback on this — it should warn and skip the light-window
+# setup gracefully (exit 0), leaving the JSONC file byte-for-byte untouched
+# (no backup, no rewrite), while still installing the claude/bin artifacts.
+cat > "$WORK3/wt.json" <<'JSONC'
+{
+  // this comment line is legal JSONC but not strict JSON
+  "profiles": { "list": [ { "name": "Ubuntu", "guid": "{25abb833-a701-5cc1-9dc2-cf33e62fd10b}" } ] },
+  "schemes": [],
+}
+JSONC
+cp "$WORK3/wt.json" "$WORK3/wt.json.orig"
+
+run_jsonc() {
+  TT_CLAUDE_DIR="$WORK3/claude" TT_BIN_DIR="$WORK3/bin" \
+  TT_WT_SETTINGS="$WORK3/wt.json" TT_WSL_DISTRO="Ubuntu" \
+  bash install/setup.sh
+}
+
+set +e
+JSONC_OUT="$(run_jsonc 2>&1)"
+JSONC_RC=$?
+set -e
+
+if [ "$JSONC_RC" -ne 0 ]; then
+  echo "expected exit 0 for JSONC WT settings, got $JSONC_RC" >&2
+  echo "$JSONC_OUT" >&2
+  exit 1
+fi
+
+if ! grep -q "not strict JSON" <<<"$JSONC_OUT"; then
+  echo "missing JSONC warning in output:" >&2
+  echo "$JSONC_OUT" >&2
+  exit 1
+fi
+
+python3 - "$WORK3" <<'PY'
+import os, sys, stat
+w = sys.argv[1]
+# claude-dir / bin-dir artifacts still installed despite the JSONC WT settings
+for p in ["bin/clbs", "bin/clbs-run", "claude/brainstorm-statusline.sh"]:
+    fp = os.path.join(w, p); assert os.path.exists(fp), p
+    assert os.stat(fp).st_mode & stat.S_IXUSR, "not executable: " + p
+# the JSONC file itself must be byte-for-byte unchanged
+orig = open(os.path.join(w, "wt.json.orig"), "rb").read()
+after = open(os.path.join(w, "wt.json"), "rb").read()
+assert after == orig, "JSONC WT settings file was modified"
+# no backup should have been created for a file setup.sh never actually touched
+assert not os.path.exists(os.path.join(w, "wt.json.tt-backup")), "unexpected .tt-backup for JSONC file"
+print("setup jsonc-scenario OK")
 PY
