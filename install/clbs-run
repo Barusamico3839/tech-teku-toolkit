@@ -6,6 +6,14 @@ set -euo pipefail
 cd "$HOME" 2>/dev/null || true
 OVERLAY="$HOME/.claude/brainstorm.json"
 
+# Guard against running before install/setup.sh has written the overlay.
+# Dry-run smoke tests bypass this so they can exercise the command-building
+# logic against a fake HOME without needing to fabricate the overlay file.
+if [ "${CLBS_DRY_RUN:-}" != "1" ] && [ ! -f "$OVERLAY" ]; then
+  echo "clbs-run: overlay not found at $OVERLAY — run install/setup.sh first." >&2
+  exit 1
+fi
+
 if command -v cux >/dev/null 2>&1; then
   LAUNCH=(cux --settings "$OVERLAY" --permission-mode bypassPermissions)
 else
