@@ -2,7 +2,7 @@
 
 - **日付**: 2026-07-02
 - **ステータス**: 設計合意済み（実装プラン作成へ）
-- **配布**: 共通アンブレラ・マーケット `hikaru-harnesses` の1プラグイン（`plugins/brainstorm-harness/`）。将来 `harnesseed` も同マーケットへ移設予定。
+- **配布**: 共通アンブレラ・マーケット `tech-teku-toolkit` の1プラグイン（`plugins/brainstorm-harness/`）。将来 `harnesseed` も同マーケットへ移設予定。
 - **公開**: GitHub Public
 - **開発の流儀**: ライト版ハーネスエンジニアリング（spec → plan → implement → verify。要検証ポイントはインライン確認。bootstrap-log は簡易メモ）
 - **関連ログ**: `docs/bootstrap-log/2026-07-02-verify-0.md`（技術前提のインライン検証メモ）
@@ -24,7 +24,7 @@
 ### やること（MVP）
 - 3つの入口（WTプロファイル / `clbs` コマンド / `/clbs` スラッシュ）から、明るい独立ターミナルでブレストモードの Claude Code を起動。
 - ブレストモードの中身: ライトテーマ・bypass・厳選スキル・起動バナー・英日切替。
-- アンブレラ・マーケット `hikaru-harnesses` の器 + `brainstorm-harness` プラグイン + `setup.sh`。
+- アンブレラ・マーケット `tech-teku-toolkit` の器 + `brainstorm-harness` プラグイン + `setup.sh`。
 
 ### やらないこと（Out of scope）
 - harnesseed 本体の移設（今回は「入る場所」だけ用意し、slot と README に導線を書く。既存 `docs/` は触らない）。
@@ -108,7 +108,7 @@
 
 U3 の `enabledPlugins` に **ONにしたい厳選セットだけを列挙**する。`--settings` はキー単位の上書き（＝`enabledPlugins` オブジェクトごと置換。検証 V2）なので、**未列挙のプラグインはこのセッションでは自動的に落ちて無効化**される。OFF を明示する必要はない。
 
-- **ON（列挙する）**: `brainstorm-harness@hikaru-harnesses`（本プラグイン自体）, `superpowers`（brainstorming / writing-plans）, `everything-claude-code`（market-research / council / product-lens / blueprint / brand-voice 等）, `frontend-design`（ビジュアルモック）, `firecrawl`（Web調査）, `notion`（アイデア記録）
+- **ON（列挙する）**: `brainstorm-harness@tech-teku-toolkit`（本プラグイン自体）, `superpowers`（brainstorming / writing-plans）, `everything-claude-code`（market-research / council / product-lens / blueprint / brand-voice 等）, `frontend-design`（ビジュアルモック）, `firecrawl`（Web調査）, `notion`（アイデア記録）
 - **自動的に無効（列挙しない）**: コードレビュー系 / ビルド修復系 / ralph-loop / mcp-server-dev / groundwork / greptile / bells-and-whistles など。
 - **常時利用可（組み込み）**: `deep-research`, `dataviz`, `artifact-design` はプラグイン外でも使えるので列挙不要。
 
@@ -119,7 +119,7 @@ U3 の `enabledPlugins` に **ONにしたい厳選セットだけを列挙**す�
 ## 8. 配布・セットアップ（アンブレラ・マーケット）
 
 ```
-hikaru-harnesses/                         # ← GitHub Public。push = クラウド保存
+tech-teku-toolkit/                         # ← GitHub Public。push = クラウド保存
 ├─ .claude-plugin/marketplace.json        # 複数プラグインを列挙するカタログ
 ├─ plugins/
 │   ├─ brainstorm-harness/                # 今回のプラグイン(U4)
@@ -139,8 +139,8 @@ hikaru-harnesses/                         # ← GitHub Public。push = クラウ
 
 ### 自分の導入 / 友達の導入
 ```
-/plugin marketplace add <owner>/hikaru-harnesses
-/plugin install brainstorm-harness@hikaru-harnesses
+/plugin marketplace add <owner>/tech-teku-toolkit
+/plugin install brainstorm-harness@tech-teku-toolkit
 bash install/setup.sh        # WT の明るい窓・clbs・~/.claude/brainstorm.json を用意（1回だけ）
 ```
 
@@ -181,5 +181,5 @@ bash install/setup.sh        # WT の明るい窓・clbs・~/.claude/brainstorm.
 
 ## 11. 未解決・確認したいこと
 
-- アンブレラ repo 名は `hikaru-harnesses` で確定して良いか（後から rename も可）。
+- ✅ アンブレラ repo 名 = マーケットプレイス名 = `tech-teku-toolkit` で確定（2026-07-02）。
 - harnesseed の移設は別タスク（今回は slot と README 導線のみ）で良いか。
