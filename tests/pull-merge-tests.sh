@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# stage-merge.sh tests: staged 3-way merge can never corrupt the seedling.
+set -u
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SM="$ROOT/plugins/harnesseed/skills/pull/stage-merge.sh"
+CHK="$ROOT/plugins/harnesseed/blueprint/evals/check-invariants.sh"
+PASS=0; FAIL=0
+check() { if [ "$2" = "$3" ]; then PASS=$((PASS+1)); else FAIL=$((FAIL+1)); echo "FAIL: $1 (expected $2 got $3)"; fi; }
+TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+
+mk_seedling() { # $1 = dir
+  local S="$1"
+  mkdir -p "$S/roots" "$S/stem" "$S/trend-stock"
+  printf 'line-a\nline-b\nline-c\n' > "$S/roots/philosophy.md"
+  printf 'minimal\n' > "$S/roots/invariants.md"
+  printf '{"seed_version":"0.4.0","files":{}}' > "$S/roots/manifest.json"
+  # personalization: stem adds a line at the END (upstream will change the TOP)
+  printf 'line-a\nline-b\nline-c\nmy-personal-take\n' > "$S/stem/philosophy.md"
+  printf '{"entries":[]}' > "$S/trend-stock/index.json"
+  python3 - "$S" <<'PY'
+import hashlib, json, os, sys
+s = sys.argv[1]
+walked = {}
+for dp, _, fns in os.walk(os.path.join(s, "roots")):
+    for fn in sorted(fns):
+        rel = os.path.relpath(os.path.join(dp, fn), os.path.join(s, "roots"))
+        walked[rel] = hashlib.sha256(open(os.path.join(dp, fn), "rb").read()).hexdigest()
+json.dump({"seed_version": "0.4.0", "planted_at": "2026-07-13", "blueprint": walked},
+          open(os.path.join(s, "planted.json"), "w"), indent=1)
+PY
+  printf '.pull-staging/\n' > "$S/.gitignore"
+  git -C "$S" init -q
+  git -C "$S" -c user.email=t@t -c user.name=t add -A
+  git -C "$S" -c user.email=t@t -c user.name=t commit -q -m "germinate: v0.4.0" -m "Harnesseed-Event: germinate
+Seed-Version: 0.4.0"
+}
+
+mk_newbp() { # $1 = dir, $2 = philosophy top line
+  local B="$1"
+  mkdir -p "$B"
+  printf '%s\nline-b\nline-c\n' "$2" > "$B/philosophy.md"
+  printf 'minimal v2\n' > "$B/invariants.md"
+  printf '{"seed_version":"0.5.0","files":{}}' > "$B/manifest.json"
+}
+
+# --- clean merge: upstream changes top line, stem added bottom line ---
+S1="$TMP/s1"; mk_seedling "$S1"
+B1="$TMP/bp1"; mk_newbp "$B1" "line-a-improved"
+bash "$SM" stage "$S1" "$B1" >/dev/null; check "clean stage exits 0" 0 $?
+GIT_AUTHOR_EMAIL=t@t GIT_AUTHOR_NAME=t GIT_COMMITTER_EMAIL=t@t GIT_COMMITTER_NAME=t \
+  bash "$SM" finalize "$S1" "$B1" >/dev/null; check "finalize exits 0" 0 $?
+grep -q 'line-a-improved' "$S1/stem/philosophy.md"; check "merged stem absorbed upstream change" 0 $?
+grep -q 'my-personal-take' "$S1/stem/philosophy.md"; check "merged stem kept personalization" 0 $?
+grep -q 'line-a-improved' "$S1/roots/philosophy.md"; check "roots replaced with new pristine" 0 $?
+python3 -c "import json; d=json.load(open('$S1/planted.json')); assert d['seed_version']=='0.5.0', d"
+check "planted.json absorbed new version" 0 $?
+[ ! -e "$S1/.pull-staging" ]; check "staging removed after finalize" 0 $?
+bash "$CHK" "$S1" >/dev/null; check "invariants checker passes post-pull (pull trailer)" 0 $?
+N_COMMITS="$(git -C "$S1" rev-list --count HEAD)"
+check "pull is exactly one commit (germinate+pull=2)" 2 "$N_COMMITS"
+
+# --- conflict: upstream and stem change the SAME line ---
+S2="$TMP/s2"; mk_seedling "$S2"
+printf 'line-a-MINE\nline-b\nline-c\n' > "$S2/stem/philosophy.md"
+git -C "$S2" -c user.email=t@t -c user.name=t add -A
+git -C "$S2" -c user.email=t@t -c user.name=t commit -q -m "grow: personalize top" -m "Harnesseed-Event: grow"
+B2="$TMP/bp2"; mk_newbp "$B2" "line-a-THEIRS"
+SNAP_BEFORE="$(git -C "$S2" status --porcelain; git -C "$S2" rev-parse HEAD)"
+bash "$SM" stage "$S2" "$B2" >/dev/null 2>&1; check "conflicting stage exits 2" 2 $?
+SNAP_AFTER="$(git -C "$S2" status --porcelain; git -C "$S2" rev-parse HEAD)"
+[ "$SNAP_BEFORE" = "$SNAP_AFTER" ]; check "seedling tracked files untouched by conflict" 0 $?
+grep -q '^<<<<<<< ' "$S2/.pull-staging/merged/philosophy.md"; check "conflict markers live in staging only" 0 $?
+bash "$SM" finalize "$S2" "$B2" >/dev/null 2>&1; check "finalize refuses unresolved markers" 1 $?
+bash "$SM" stage "$S2" "$B2" >/dev/null 2>&1; check "leftover staging detected on re-stage" 1 $?
+
+# --- dirty tree abort ---
+S3="$TMP/s3"; mk_seedling "$S3"
+printf 'dirty\n' >> "$S3/stem/philosophy.md"
+B3="$TMP/bp3"; mk_newbp "$B3" "x"
+bash "$SM" stage "$S3" "$B3" >/dev/null 2>&1; check "dirty working tree aborts stage" 1 $?
+
+echo "pull-merge-tests: $PASS passed, $FAIL failed"; [ "$FAIL" = 0 ]
