@@ -62,11 +62,13 @@ cache, so integrity is enforced by hash checks against your seedling's records, 
 v1 never edits your host settings: proposals touching `settings.json`/`CLAUDE.md` are emitted as
 diffs for you to apply by hand.
 
-### Coming in this major version (build order)
+### The five commands
 
-P2 `/harnesseed:scout` (automated, adversarially-verified trend research) → P3 `/harnesseed:checkup`
-(12-category harness health check) → P4 `/harnesseed:grow` (propose→approve→apply with Misevolution
-governance) → P5 `/harnesseed:pull` (3-way merge of upstream canon; your stem survives).
+`/harnesseed:harness` (germinate / attach) · `/harnesseed:scout` (automated,
+adversarially-verified trend research) · `/harnesseed:checkup` (12-category harness health
+check, read-only) · `/harnesseed:grow` (propose→approve→apply with Misevolution governance
+and automatic revert) · `/harnesseed:pull` (staged 3-way merge of upstream canon — your stem
+survives, and an interrupted pull can never corrupt the seedling).
 
 ### Migrating from brainstorm-harness (removed)
 
