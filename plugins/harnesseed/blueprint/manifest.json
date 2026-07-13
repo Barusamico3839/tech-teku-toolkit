@@ -3,7 +3,7 @@
   "files": {
     "checkup-checklist.md": "8a09b5388cbfb53f4596e79cb986b1963b20f71a673d999abff1496a64931da2",
     "drift-review.md": "b39dcd29646b8831801085eb3dc08459c683f649ad2519a335bbd25982447bdc",
-    "evals/check-invariants.sh": "a8fff666f653c92227978212870f240478f4fc9183f24e30355cdb00f2b1f293",
+    "evals/check-invariants.sh": "d903afa64438ea3fadc375b5f3ac07cb1f5f13cd4d43524157c834ef57e871fb",
     "evals/scenarios.md": "177e22fab0229331833ac4f644e4829b54c8ffc8797a0f7a6d40c7a102734183",
     "invariants.md": "00bb7fd33dff9deba537a4d1da4cfa3ca7569dbb8cca44ba5d1423d6555a5a28",
     "philosophy.md": "bbd126c1ec05a74657d8e459b6e05198b5654909ee24c143ed0237c2ece6061f",
