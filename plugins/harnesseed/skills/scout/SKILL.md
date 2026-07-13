@@ -15,7 +15,7 @@ ANGLES="$SEEDLING/roots/scout-angles.md"       # canon (from your absorbed seed 
 INDEX="$SEEDLING/trend-stock/index.json"
 LEDGER="${CLAUDE_PLUGIN_ROOT}/skills/scout/ledger.py"
 KNOWN_JSON="$(python3 "$LEDGER" known "$INDEX")"
-RUN_DATE=<today YYYY-MM-DD>; RUN_ID="scout-$RUN_DATE"
+RUN_DATE="$(date +%F)"; RUN_ID="scout-$RUN_DATE"
 ```
 
 ## Stage 1 — autonomous research (approval gate is a STAGE BOUNDARY, never mid-run)

@@ -11,7 +11,7 @@ Harnesseed は tamper-proof を主張しない。ここにあるのは「grow �
 |---|---|
 | 自由に編集可 | `stem/` |
 | 追記のみ可 | `trend-stock/index.json`（id 単調増加・既存エントリは status 以外書換禁止）・`trend-stock/*-scout-*.md`（新規追加のみ）・`checkups/`（新規追加のみ）・`growth-log.md`（追記のみ） |
-| governed operation（承認＋1コミット） | `trend-stock/summary.md` 再生成・growth-log の rotation |
+| governed operation（承認＋1コミット） | 要約 view の再生成のみ: `trend-stock/summary.md`・`growth-log-summary.md`。**本体ファイル（growth-log.md・index.json）は無期限 append-only で切り詰めない**（旧「rotation」は廃止 — 追記型の機械検査と構造矛盾するため。肥大は要約 view を第一参照にすることで吸収する） |
 | 特定ゲートのみ | `planted.json`・`roots/` — 書けるのは初回発芽と /harnesseed:pull だけ。同一の1コミットで更新する |
 | 提案出力のみ（v1 は直接編集しない） | ユーザー級/プロジェクト級ハーネス設定（settings.json・CLAUDE.md・.mcp.json・hooks 等）。permissions/hooks を緩和する diff は提示時に明示ハイライトする |
 | 絶対不可 | プラグインキャッシュの `blueprint/`・あらゆるプロジェクトのアプリソースコード |

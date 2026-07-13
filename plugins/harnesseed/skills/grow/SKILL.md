@@ -52,7 +52,7 @@ code and absolutely off-limits):
 |---|---|
 | `stem/` | freely editable — the main growth surface |
 | `trend-stock/index.json` (append/status via ledger.py), `trend-stock/*-scout-*.md`・`checkups/` (new files), `growth-log.md` (append) | append-only surfaces |
-| `trend-stock/summary.md` regen・growth-log rotation | governed operation (approval + 1 commit) |
+| `trend-stock/summary.md`・`growth-log-summary.md` regen (condensed views ONLY — never truncate growth-log.md/index.json themselves; the append-only gate has no rotation exception by design) | governed operation (approval + 1 commit) |
 | `planted.json`・`roots/` | NEVER from grow (germination/pull only — the checker enforces the trailer rule) |
 | user/project harness settings (`settings.json`, CLAUDE.md, `.mcp.json`, hooks…) | **diff proposal only** — user applies by hand. Mechanically flag any diff that loosens permissions/hooks and highlight it in Stage 2 |
 | `blueprint/` cache・any project's app source | absolutely never |

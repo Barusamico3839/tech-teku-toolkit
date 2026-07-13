@@ -172,7 +172,7 @@ tech-teku-toolkit/                       # 🌳 tree = 本家repo（main = ひ�
 │   ├── YYYY-MM-DD-scout-N.md       #   scout 実行ごとの詳細（新規追加のみ）
 │   └── summary.md                  #   curated view（governed operation で再生成・bounded size）
 ├── checkups/                       # P3 レポート＋P4 drift review 結果（新規追加のみ）
-├── growth-log.md                   # P4 の軌跡ログ（追記のみ。rotation は governed operation）
+├── growth-log.md                   # P4 の軌跡ログ（無期限 append-only。要約は growth-log-summary.md へ）
 └── .pull-staging/                  # P5 pull の作業領域（git 管理外・.gitignore）
 ```
 
@@ -180,7 +180,7 @@ tech-teku-toolkit/                       # 🌳 tree = 本家repo（main = ひ�
 - **roots（pristine）と stem（上書き）の分離**が肝: pull で roots=base / stem=mine / 新blueprint=theirs の 3-way merge に落とせる。
 - **roots/ への正当な書き込みは2経路のみ**: (a) 発芽時の初期生成（§4手順4）、(b) pull 完了時の pristine 更新（§10）。いずれも planted.json の更新と**同一の1コミット**で行う。grow を含む他の全経路からは絶対不可。
 - **trend-stock は3層あり役割が違う**: `blueprint/trend-stock/`＝配布正典（プラグイン更新で入れ替わる）／`roots/trend-stock/`＝version 固定の pristine スナップショット（merge base）／生きた `trend-stock/`＝台帳と採用ストック。
-- **ライフサイクル方針**: index.json と growth-log.md は無期限追記（1件が小さい台帳）。肥大する散文側（scout 詳細・growth-log 本文）は governed operation（承認ゲート＋1コミット）で summary 生成・archive rotation できる。読み手（フックのポインタ先・scout Stage 2）は summary.md を第一参照にする。
+- **ライフサイクル方針**: index.json と growth-log.md は無期限 append-only（本体は決して切り詰めない — 追記型の機械検査と rotation は構造矛盾するため v1 で rotation 概念は廃止）。肥大は governed operation（承認ゲート＋1コミット）による**要約 view の再生成**（trend-stock/summary.md・growth-log-summary.md）で吸収し、読み手（フックのポインタ先・scout Stage 2）は要約 view を第一参照にする。
 
 ### 統治の最小核（P1 に最初から入れる・後付け不能な土台）
 
@@ -342,7 +342,7 @@ Stage 4: drift review（条件発火の必須ステージ）
 |---|---|---|
 | 自由に編集可 | `stem/` | grow の主戦場（個人化上書き層） |
 | 追記のみ可 | `trend-stock/index.json`（id 単調増加）・`trend-stock/*-scout-*.md`（新規追加）・`checkups/`（新規追加）・`growth-log.md`（追記） | invariants ①-4/5 が機械検査 |
-| governed operation | `trend-stock/summary.md` 再生成・growth-log の rotation/archive | 承認ゲート＋1コミット |
+| governed operation | 要約 view の再生成のみ（`trend-stock/summary.md`・`growth-log-summary.md`）。本体の切り詰め（旧 rotation）は不可 | 承認ゲート＋1コミット |
 | 特定ゲートのみ | `planted.json`・`roots/` | 初回発芽 / pull だけが書ける（①-6/7） |
 | **提案出力のみ（v1 は直接編集しない）** | ユーザー級・プロジェクト級のハーネス設定: `~/.claude/settings.json`・グローバル/プロジェクト CLAUDE.md・`.claude/settings*.json`・`.mcp.json`・hooks 等 | grow は **diff を提案として出力し、適用はユーザーが手で行う**。permissions/hooks の緩和を含む diff は提示時に機械検出して明示ハイライト |
 | 絶対不可 | `blueprint/`（プラグインキャッシュ）・**あらゆるプロジェクトのアプリソースコード** | — |

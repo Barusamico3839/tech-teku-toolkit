@@ -144,4 +144,33 @@ G2 add -A; G2 commit -q -m "bad: rewrite rejection reason" -m "Harnesseed-Event:
 bash "$CHK" "$S2" >/dev/null 2>&1; check "rewriting existing rejected metadata fails" 1 $?
 G2 reset -q --hard HEAD~1
 
+# --- add-only record surfaces (checkups/, scout run details) ---
+mkdir -p "$S2/checkups"
+printf 'report body\n' > "$S2/checkups/2026-07-14-checkup.md"
+G2 add -A; G2 commit -q -m "checkup" -m "Harnesseed-Event: checkup"
+bash "$CHK" "$S2" >/dev/null; check "new checkup report passes" 0 $?
+printf 'edited later\n' >> "$S2/checkups/2026-07-14-checkup.md"
+G2 add -A; G2 commit -q -m "bad: edit past checkup" -m "Harnesseed-Event: grow"
+bash "$CHK" "$S2" >/dev/null 2>&1; check "modifying a past checkup fails" 1 $?
+G2 reset -q --hard HEAD~1
+# a spacer commit so the delete is NOT adjacent to the add (an adjacent add+delete
+# is tree-identical to an auto-revert pair and intentionally passes as net zero)
+printf 'spacer\n' >> "$S2/growth-log.md"
+G2 add -A; G2 commit -q -m "grow: spacer" -m "Harnesseed-Event: grow"
+rm "$S2/checkups/2026-07-14-checkup.md"
+G2 add -A; G2 commit -q -m "bad: delete past checkup" -m "Harnesseed-Event: grow"
+bash "$CHK" "$S2" >/dev/null 2>&1; check "deleting a past checkup (non-adjacent) fails" 1 $?
+G2 reset -q --hard HEAD~1
+printf 'run detail\n' > "$S2/trend-stock/2026-07-14-scout-1.md"
+G2 add -A; G2 commit -q -m "scout: run detail" -m "Harnesseed-Event: scout"
+bash "$CHK" "$S2" >/dev/null; check "new scout detail passes" 0 $?
+printf 'revised\n' >> "$S2/trend-stock/2026-07-14-scout-1.md"
+G2 add -A; G2 commit -q -m "bad: edit scout detail" -m "Harnesseed-Event: grow"
+bash "$CHK" "$S2" >/dev/null 2>&1; check "modifying a past scout detail fails" 1 $?
+G2 reset -q --hard HEAD~1
+printf 'r2\n' > "$S2/checkups/2026-07-14-checkup-2.md"
+G2 add -A; G2 commit -q -m "checkup 2" -m "Harnesseed-Event: checkup"
+G2 revert --no-edit HEAD >/dev/null 2>&1
+bash "$CHK" "$S2" >/dev/null; check "checkup auto-revert pair still passes" 0 $?
+
 echo "invariants-p4-tests: $PASS passed, $FAIL failed"; [ "$FAIL" = 0 ]

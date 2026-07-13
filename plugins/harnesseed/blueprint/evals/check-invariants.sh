@@ -116,6 +116,21 @@ if git("rev-parse", "--verify", "-q", "HEAD").returncode == 0:
             if ev not in ("germinate", "pull"):
                 fail.append("protected paths (planted.json / roots/) changed by a commit "
                             "without a germinate/pull trailer")
+        # Past records (checkup reports, scout run details) are add-only files:
+        # modifying or deleting them rewrites the evidence trail. --no-renames so
+        # a rename cannot masquerade as an allowed change. (A cancelled apply+revert
+        # pair skips this whole branch, so auto-reverts stay clean.)
+        ns = git("diff", "--no-renames", "--name-status", "HEAD~1", "HEAD").stdout
+        for line in ns.splitlines():
+            parts = line.split("\t")
+            if len(parts) < 2:
+                continue
+            status, p = parts[0], parts[1]
+            is_record = (p.startswith("checkups/")
+                         or (p.startswith("trend-stock/") and p.endswith(".md")
+                             and "-scout-" in os.path.basename(p)))
+            if is_record and status != "A":
+                fail.append(f"{p}: past records are add-only (got git status {status!r})")
 if fail:
     print("INVARIANT FAIL:"); [print("  -", f) for f in fail]; sys.exit(1)
 print(f"invariants OK (seed_version {planted['seed_version']}, {len(planted['blueprint'])} canon files pristine)")

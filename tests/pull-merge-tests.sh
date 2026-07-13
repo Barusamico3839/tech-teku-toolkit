@@ -35,12 +35,23 @@ PY
 Seed-Version: 0.4.0"
 }
 
-mk_newbp() { # $1 = dir, $2 = philosophy top line
+mk_newbp() { # $1 = dir, $2 = philosophy top line — writes a REAL manifest (hashes match)
   local B="$1"
   mkdir -p "$B"
   printf '%s\nline-b\nline-c\n' "$2" > "$B/philosophy.md"
   printf 'minimal v2\n' > "$B/invariants.md"
-  printf '{"seed_version":"0.5.0","files":{}}' > "$B/manifest.json"
+  python3 - "$B" <<'PY'
+import hashlib, json, os, sys
+b = sys.argv[1]
+files = {}
+for dp, _, fns in os.walk(b):
+    for fn in sorted(fns):
+        rel = os.path.relpath(os.path.join(dp, fn), b)
+        if rel == "manifest.json":
+            continue
+        files[rel] = hashlib.sha256(open(os.path.join(dp, fn), "rb").read()).hexdigest()
+json.dump({"seed_version": "0.5.0", "files": files}, open(os.path.join(b, "manifest.json"), "w"))
+PY
 }
 
 # --- clean merge: upstream changes top line, stem added bottom line ---
@@ -73,6 +84,19 @@ grep -q '^<<<<<<< ' "$S2/.pull-staging/merged/philosophy.md"; check "conflict ma
 bash "$SM" finalize "$S2" "$B2" >/dev/null 2>&1; check "finalize refuses unresolved markers" 1 $?
 bash "$SM" stage "$S2" "$B2" >/dev/null 2>&1; check "leftover staging detected on re-stage" 1 $?
 
+# --- interrupted pull: resolve the staged conflict, then finalize completes (P5-4) ---
+printf 'line-a-RESOLVED\nline-b\nline-c\n' > "$S2/.pull-staging/merged/philosophy.md"
+GIT_AUTHOR_EMAIL=t@t GIT_AUTHOR_NAME=t GIT_COMMITTER_EMAIL=t@t GIT_COMMITTER_NAME=t \
+  bash "$SM" finalize "$S2" "$B2" >/dev/null; check "resume: finalize completes after resolution" 0 $?
+bash "$CHK" "$S2" >/dev/null; check "resume: invariants pass post-pull" 0 $?
+check "resume: pull is one commit (total 3)" 3 "$(git -C "$S2" rev-list --count HEAD)"
+python3 -c "import json; d=json.load(open('$S2/planted.json')); assert d['seed_version']=='0.5.0', d"
+check "resume: planted absorbed 0.5.0" 0 $?
+grep -q 'line-a-RESOLVED' "$S2/stem/philosophy.md"; check "resume: stem has resolved content" 0 $?
+grep -q 'line-a-THEIRS' "$S2/roots/philosophy.md"; check "resume: roots is new pristine" 0 $?
+[ ! -e "$S2/.pull-staging" ]; check "resume: staging cleaned up" 0 $?
+check "resume: pull trailer present" "pull" "$(git -C "$S2" log -1 --format='%(trailers:key=Harnesseed-Event,valueonly)')"
+
 # --- dirty tree abort ---
 S3="$TMP/s3"; mk_seedling "$S3"
 printf 'dirty\n' >> "$S3/stem/philosophy.md"
@@ -86,6 +110,11 @@ NOSTEM="$TMP/nostem"; mkdir -p "$NOSTEM"; git -C "$NOSTEM" init -q
 bash "$SM" stage "$NOSTEM" "$B3" >/dev/null 2>&1; check "stem-less seedling aborts stage" 1 $?
 S4="$TMP/s4"; mk_seedling "$S4"
 bash "$SM" stage "$S4" "$TMP/does-not-exist" >/dev/null 2>&1; check "missing NEWBP aborts stage" 1 $?
+BTAMPER="$TMP/bptamper"; mk_newbp "$BTAMPER" "line-a-evil"
+printf 'weakened\n' >> "$BTAMPER/philosophy.md"
+bash "$SM" stage "$S4" "$BTAMPER" >/dev/null 2>&1; check "files-only tamper (manifest stale) aborts stage" 1 $?
+touch "$BTAMPER/evil.md"
+bash "$SM" stage "$S4" "$BTAMPER" >/dev/null 2>&1; check "rogue file addition aborts stage" 1 $?
 
 # --- finalize refuses when NEWBP changed after stage / is invalid ---
 B4="$TMP/bp4"; mk_newbp "$B4" "line-a-new"

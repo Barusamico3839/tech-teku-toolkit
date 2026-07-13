@@ -17,15 +17,33 @@ NEWBP="${3:?new blueprint dir}"
 STG="$S/.pull-staging"
 
 validate_newbp() {
+  # Same bidirectional gate as germination: the new blueprint must match its own
+  # manifest exactly (hash mismatches, missing files AND rogue additions), or a
+  # tampered cache would launder itself into planted.json/roots via pull.
+  # Runs in BOTH stage and finalize (TOCTOU covered by construction).
   [ -d "$NEWBP" ] || { echo "ABORT: new blueprint dir not found: $NEWBP"; exit 1; }
   python3 - "$NEWBP" <<'PY' || exit 1
-import json, sys
+import hashlib, json, os, sys
+bp = sys.argv[1]
 try:
-    m = json.load(open(sys.argv[1] + "/manifest.json"))
+    m = json.load(open(os.path.join(bp, "manifest.json")))
 except Exception as e:
     sys.exit(f"ABORT: new blueprint manifest unreadable: {e}")
 if "seed_version" not in m:
     sys.exit("ABORT: new blueprint manifest has no seed_version")
+walked = {}
+for dp, _, fns in os.walk(bp):
+    for fn in sorted(fns):
+        rel = os.path.relpath(os.path.join(dp, fn), bp)
+        if rel == "manifest.json":
+            continue
+        walked[rel] = hashlib.sha256(open(os.path.join(dp, fn), "rb").read()).hexdigest()
+if walked != m.get("files"):
+    for k in sorted(set(walked) | set(m.get("files", {}))):
+        if walked.get(k) != m.get("files", {}).get(k):
+            print(f"  mismatch: {k}", file=sys.stderr)
+    sys.exit("ABORT: new blueprint does not match its manifest (tamper or broken "
+             "release) — refuse to absorb it. Reinstall the plugin and retry.")
 PY
 }
 
