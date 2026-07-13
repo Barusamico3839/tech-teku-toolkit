@@ -88,4 +88,60 @@ G checkout -q master 2>/dev/null || G checkout -q main
 G merge -q --no-ff -m "merge side" side 2>/dev/null
 bash "$CHK" "$S" >/dev/null 2>&1; check "merge commit (non-linear history) fails" 1 $?
 
+# ===== fixture 2: heading-ful canon (skeleton, revert-pair, rejected-metadata) =====
+S2="$TMP/seedling2"
+G2() { git -C "$S2" -c user.email=t@t -c user.name=t "$@"; }
+mkdir -p "$S2/roots" "$S2/stem" "$S2/trend-stock"
+printf '# Alpha\ncanon body\n## Beta\nmore\n' > "$S2/roots/philosophy.md"
+H2="$(python3 -c "import hashlib;print(hashlib.sha256(open('$S2/roots/philosophy.md','rb').read()).hexdigest())")"
+printf '{"seed_version":"1.0.1","planted_at":"2026-07-13","blueprint":{"philosophy.md":"%s"}}' "$H2" > "$S2/planted.json"
+printf '{"entries":[]}' > "$S2/trend-stock/index.json"
+git -C "$S2" init -q
+G2 add -A
+G2 commit -q -m "germinate: v1.0.1" -m "Harnesseed-Event: germinate
+Seed-Version: 1.0.1"
+bash "$CHK" "$S2" >/dev/null; check "baseline without stem philosophy passes (never existed)" 0 $?
+
+printf '# Alpha\nmy take\n## Beta\nmine\n## Mine\nextra\n' > "$S2/stem/philosophy.md"
+G2 add -A; G2 commit -q -m "grow: personalize" -m "Harnesseed-Event: grow"
+bash "$CHK" "$S2" >/dev/null; check "stem keeping canon headings + additions passes" 0 $?
+
+printf '## Mine\nonly mine now\n' > "$S2/stem/philosophy.md"
+G2 add -A; G2 commit -q -m "bad: drop canon headings" -m "Harnesseed-Event: grow"
+bash "$CHK" "$S2" >/dev/null 2>&1; check "stem losing canon headings fails" 1 $?
+G2 reset -q --hard HEAD~1
+
+rm "$S2/stem/philosophy.md"
+G2 add -A; G2 commit -q -m "bad: delete stem philosophy" -m "Harnesseed-Event: grow"
+bash "$CHK" "$S2" >/dev/null 2>&1; check "stem philosophy deletion fails (existed in history)" 1 $?
+G2 reset -q --hard HEAD~1
+
+# --- auto-revert pair nets to zero ---
+printf 'e1\n' > "$S2/growth-log.md"; G2 add -A; G2 commit -q -m "grow: e1" -m "Harnesseed-Event: grow"
+printf 'e2\n' >> "$S2/growth-log.md"; G2 add -A; G2 commit -q -m "grow: e2" -m "Harnesseed-Event: grow"
+G2 revert --no-edit HEAD >/dev/null 2>&1
+bash "$CHK" "$S2" >/dev/null; check "auto-revert pair passes (net-zero tree)" 0 $?
+printf 'revert note\n' >> "$S2/growth-log.md"; G2 add -A; G2 commit -q -m "grow: note revert" -m "Harnesseed-Event: grow"
+bash "$CHK" "$S2" >/dev/null; check "append after revert passes" 0 $?
+
+# --- deferred->rejected metadata addition (sole immutability exception) ---
+python3 -c "
+import json; p='$S2/trend-stock/index.json'; d=json.load(open(p))
+d['entries'].append({'id':'x','title':'X','status':'deferred','source':'s','registered_at':'2026-07-13','maturity':'emerging'})
+json.dump(d, open(p,'w'), indent=1)"
+G2 add -A; G2 commit -q -m "scout: defer x" -m "Harnesseed-Event: scout"
+python3 -c "
+import json; p='$S2/trend-stock/index.json'; d=json.load(open(p))
+e = d['entries'][0]; e['status']='rejected'; e['reason']='immature'; e['evidence']='single blog'; e['rejected_at']='2026-07-13'
+json.dump(d, open(p,'w'), indent=1)"
+G2 add -A; G2 commit -q -m "scout: reject x" -m "Harnesseed-Event: scout"
+bash "$CHK" "$S2" >/dev/null; check "deferred->rejected metadata addition passes" 0 $?
+python3 -c "
+import json; p='$S2/trend-stock/index.json'; d=json.load(open(p))
+d['entries'][0]['reason']='REWRITTEN'
+json.dump(d, open(p,'w'), indent=1)"
+G2 add -A; G2 commit -q -m "bad: rewrite rejection reason" -m "Harnesseed-Event: scout"
+bash "$CHK" "$S2" >/dev/null 2>&1; check "rewriting existing rejected metadata fails" 1 $?
+G2 reset -q --hard HEAD~1
+
 echo "invariants-p4-tests: $PASS passed, $FAIL failed"; [ "$FAIL" = 0 ]

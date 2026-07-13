@@ -40,4 +40,28 @@ assert d['entries'][3]['supersedes'] == 'c'
 "
 check "ledger grew append-only with statuses intact" 0 $?
 
+# --- set-status to rejected requires metadata (b is currently deferred, no maturity) ---
+python3 "$LEDGER" set-status "$IDX" b rejected >/dev/null 2>&1; check "bare rejected transition fails" 1 $?
+python3 "$LEDGER" set-status "$IDX" b rejected "too immature" "one blog post only" >/dev/null 2>&1
+check "rejected transition without maturity on maturity-less entry fails" 1 $?
+python3 "$LEDGER" set-status "$IDX" b rejected "too immature" "one blog post only" emerging >/dev/null
+check "rejected transition with full metadata ok" 0 $?
+python3 -c "
+import json; d=json.load(open('$IDX'))
+b = [e for e in d['entries'] if e['id']=='b'][0]
+assert b['status'] == 'rejected' and b['reason'] == 'too immature', b
+assert b['evidence'] == 'one blog post only' and b['maturity'] == 'emerging', b
+assert 'rejected_at' in b, b
+"
+check "rejection metadata written to entry" 0 $?
+
+# --- known view carries the significant-change fields ---
+python3 "$LEDGER" known "$IDX" | python3 -c "
+import json, sys; v=json.load(sys.stdin)
+assert all('title' in e and 'source' in e for e in v), v
+rej = [e for e in v if e['status']=='rejected']
+assert rej and all('reason' in e and 'evidence' in e for e in rej), v
+"
+check "known view includes title/source (+reason/evidence for rejected)" 0 $?
+
 echo "scout-ledger-tests: $PASS passed, $FAIL failed"; [ "$FAIL" = 0 ]

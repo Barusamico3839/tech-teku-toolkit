@@ -82,8 +82,9 @@ bash "$SM" stage "$SEEDLING" "$NEWBP"
   vs the upstream change — never decide silently). Edit the staging copy until no
   `<<<<<<<` markers remain.
 - New items in the upstream `blueprint/trend-stock/index-seed.json` are NOT merged: offer them
-  as bundled-candidates and register accepted ones via
-  `python3 "${CLAUDE_PLUGIN_ROOT}/skills/scout/ledger.py" append …` (status "bundled").
+  as bundled-candidates **in conversation only at this point** — the ledger registration
+  happens AFTER finalize (Step 4), so an interrupted pull leaves the seedling's tracked
+  files untouched, as guaranteed.
 
 ## Step 4 — all-or-nothing finalize
 
@@ -94,6 +95,20 @@ bash "$SM" finalize "$SEEDLING" "$NEWBP"
 One commit: new roots + merged stem + regenerated planted.json, trailer
 `Harnesseed-Event: pull` / `Seed-Version`. Then run the (freshly absorbed) checker as a
 self-check: `bash "$SEEDLING/roots/evals/check-invariants.sh" "$SEEDLING"`.
+
+**Only now** register the accepted bundled-candidates from Step 3 (use the NEW plugin's
+ledger helper — `$NEW_ROOT/skills/scout/ledger.py`, not `${CLAUDE_PLUGIN_ROOT}` which still
+points at the old version), one `append` per accepted item (status "bundled"), then a single
+follow-up commit:
+
+```bash
+git -C "$SEEDLING" add trend-stock && git -C "$SEEDLING" commit -q \
+  -m "pull: register upstream stock additions" \
+  -m "Harnesseed-Event: pull-bundled"
+```
+
+(The trend-stock ledger is an append-only surface, not a protected path, so this commit
+passes the invariants gate without a pull trailer.)
 
 Finish by advising a Claude Code **restart** so the updated skills/hooks themselves take
 effect, and show a short diff summary of what the canon gained.

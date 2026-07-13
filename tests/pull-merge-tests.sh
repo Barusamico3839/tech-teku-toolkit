@@ -79,4 +79,33 @@ printf 'dirty\n' >> "$S3/stem/philosophy.md"
 B3="$TMP/bp3"; mk_newbp "$B3" "x"
 bash "$SM" stage "$S3" "$B3" >/dev/null 2>&1; check "dirty working tree aborts stage" 1 $?
 
+# --- stage precondition hardening ---
+NOTREPO="$TMP/notrepo"; mkdir -p "$NOTREPO"
+bash "$SM" stage "$NOTREPO" "$B3" >/dev/null 2>&1; check "non-repo seedling aborts stage" 1 $?
+NOSTEM="$TMP/nostem"; mkdir -p "$NOSTEM"; git -C "$NOSTEM" init -q
+bash "$SM" stage "$NOSTEM" "$B3" >/dev/null 2>&1; check "stem-less seedling aborts stage" 1 $?
+S4="$TMP/s4"; mk_seedling "$S4"
+bash "$SM" stage "$S4" "$TMP/does-not-exist" >/dev/null 2>&1; check "missing NEWBP aborts stage" 1 $?
+
+# --- finalize refuses when NEWBP changed after stage / is invalid ---
+B4="$TMP/bp4"; mk_newbp "$B4" "line-a-new"
+bash "$SM" stage "$S4" "$B4" >/dev/null; check "s4 stage clean" 0 $?
+printf ' \n' >> "$B4/manifest.json"
+SNAP4="$(git -C "$S4" status --porcelain; git -C "$S4" rev-parse HEAD)"
+bash "$SM" finalize "$S4" "$B4" >/dev/null 2>&1; check "NEWBP mutated after stage aborts finalize" 1 $?
+SNAP4B="$(git -C "$S4" status --porcelain; git -C "$S4" rev-parse HEAD)"
+[ "$SNAP4" = "$SNAP4B" ]; check "seedling untouched by refused finalize" 0 $?
+bash "$SM" finalize "$S4" "$TMP/does-not-exist" >/dev/null 2>&1; check "missing NEWBP aborts finalize" 1 $?
+
+# --- finalize refuses (before mutating) when git identity is unavailable ---
+S5="$TMP/s5"; mk_seedling "$S5"
+git -C "$S5" config user.useConfigOnly true
+B5="$TMP/bp5"; mk_newbp "$B5" "line-a-v5"
+bash "$SM" stage "$S5" "$B5" >/dev/null; check "s5 stage clean" 0 $?
+OUT5="$(env -u GIT_AUTHOR_EMAIL -u GIT_AUTHOR_NAME -u GIT_COMMITTER_EMAIL -u GIT_COMMITTER_NAME -u EMAIL \
+  GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null bash "$SM" finalize "$S5" "$B5" 2>&1)"
+check "identity-less finalize aborts" 1 $?
+grep -q 'line-a\b' "$S5/roots/philosophy.md"; check "roots untouched by identity abort" 0 $?
+[ -d "$S5/.pull-staging/merged" ]; check "staging preserved for resume after identity abort" 0 $?
+
 echo "pull-merge-tests: $PASS passed, $FAIL failed"; [ "$FAIL" = 0 ]

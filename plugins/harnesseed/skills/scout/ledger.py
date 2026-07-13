@@ -2,16 +2,26 @@
 """Deterministic guardian of the seedling's trend-stock ledger (index.json).
 
 Commands:
-  known <index.json>                  print JSON array of known entries (dedup view)
+  known <index.json>                  print JSON array of known entries (dedup +
+                                      significant-change view: title/source/maturity,
+                                      and reason/evidence for rejected entries)
   append <index.json> <entry.json>    validate + append a NEW entry
-  set-status <index.json> <id> <st>   update ONLY the status field of an entry
+  set-status <index.json> <id> <status> [reason evidence [maturity]]
+                                      update an entry's status. A transition TO
+                                      "rejected" REQUIRES reason and evidence
+                                      (maturity too, unless the entry already has
+                                      one) and stamps rejected_at — the canon's
+                                      re-surfacing rules depend on those fields.
 
 Rules (spec: docs/specs/2026-07-13-harnesseed-v1-design.md section 5/7):
-entry set only grows; existing entries are immutable except `status`;
-`rejected` requires reason/maturity/evidence; `supersedes` must reference an
-existing id; statuses are exactly bundled|adopted|rejected|deferred.
+entry set only grows; existing entries are immutable except `status` (plus the
+one-time addition of rejection metadata when resolving to rejected); `rejected`
+requires reason/maturity/evidence; `supersedes` must reference an existing id;
+statuses are exactly bundled|adopted|rejected|deferred.
 """
+import datetime
 import json
+import os
 import sys
 
 STATUSES = {"bundled", "adopted", "rejected", "deferred"}
@@ -25,16 +35,22 @@ def load(path):
 
 
 def save(path, data):
-    with open(path, "w") as f:
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
         f.write("\n")
+    os.replace(tmp, path)
 
 
 def cmd_known(path):
     view = []
     for e in load(path)["entries"]:
-        item = {"id": e["id"], "status": e["status"]}
-        for k in ("maturity", "registered_at", "supersedes"):
+        item = {"id": e["id"], "status": e["status"], "title": e["title"],
+                "source": e["source"]}
+        keys = ["maturity", "registered_at", "supersedes"]
+        if e["status"] == "rejected":
+            keys += ["reason", "evidence", "rejected_at"]
+        for k in keys:
             if k in e:
                 item[k] = e[k]
         view.append(item)
@@ -64,13 +80,26 @@ def cmd_append(path, entry_path):
     print(f"appended {entry['id']} ({entry['status']})")
 
 
-def cmd_set_status(path, eid, status):
+def cmd_set_status(path, eid, status, reason=None, evidence=None, maturity=None):
     if status not in STATUSES:
         sys.exit(f"set-status rejected: bad status {status!r}")
     data = load(path)
     for e in data["entries"]:
         if e["id"] == eid:
             old = e["status"]
+            if status == "rejected":
+                if not reason or not evidence:
+                    sys.exit("set-status rejected: transition to 'rejected' requires "
+                             "reason and evidence arguments (re-surfacing rules depend "
+                             "on them and entries are immutable afterwards)")
+                if "maturity" not in e and not maturity:
+                    sys.exit("set-status rejected: entry has no maturity — pass one "
+                             "(the significant-change baseline needs it)")
+                e["reason"] = reason
+                e["evidence"] = evidence
+                if maturity and "maturity" not in e:
+                    e["maturity"] = maturity
+                e["rejected_at"] = datetime.date.today().isoformat()
             e["status"] = status
             save(path, data)
             print(f"{eid}: {old} -> {status}")
@@ -84,8 +113,8 @@ def main():
         cmd_known(argv[2])
     elif len(argv) == 4 and argv[1] == "append":
         cmd_append(argv[2], argv[3])
-    elif len(argv) == 5 and argv[1] == "set-status":
-        cmd_set_status(argv[2], argv[3], argv[4])
+    elif 5 <= len(argv) <= 8 and argv[1] == "set-status":
+        cmd_set_status(argv[2], argv[3], argv[4], *argv[5:])
     else:
         sys.exit(__doc__)
 

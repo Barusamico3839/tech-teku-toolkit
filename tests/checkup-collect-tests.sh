@@ -69,4 +69,18 @@ assert d['settings']['exists'] is True and d['settings']['parse_ok'] is False, d
 "
 check "broken settings reported parse_ok=false" 0 $?
 
+# --- permissions with a non-dict value must not crash ---
+WEIRD="$TMP/weird"; mkdir -p "$WEIRD"
+printf '{"permissions": ["Read"], "enabledPlugins": {"a@m": true}}' > "$WEIRD/settings.json"
+OUT4="$(python3 "$COLLECT" "$WEIRD")"
+check "collector exits 0 on non-dict permissions" 0 $?
+printf '%s' "$OUT4" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+assert d['settings']['parse_ok'] is True, d
+assert d['settings']['permission_rules'] == {'allow': 0, 'deny': 0, 'ask': 0}, d
+assert d['settings']['enabled_plugins'] == 1, d
+"
+check "non-dict permissions reported as zero rules" 0 $?
+
 echo "checkup-collect-tests: $PASS passed, $FAIL failed"; [ "$FAIL" = 0 ]

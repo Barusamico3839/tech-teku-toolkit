@@ -8,7 +8,7 @@
 set -euo pipefail
 SEEDLING="${1:?usage: check-invariants.sh <seedling-dir>}"
 python3 - "$SEEDLING" <<'PY'
-import hashlib, json, os, subprocess, sys
+import hashlib, json, os, re, subprocess, sys
 s = sys.argv[1]
 fail = []
 planted_path = os.path.join(s, "planted.json")
@@ -38,11 +38,47 @@ def git(*a):
     return subprocess.run(["git", "-C", s, *a], capture_output=True, text=True)
 
 
+# Canon skeleton: stem/philosophy.md must keep every heading of roots/philosophy.md
+# (spec gate 1-3; the 3-way merge in pull relies on this skeleton).
+def headings(path):
+    out, fenced = set(), False
+    for line in open(path).read().splitlines():
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+            continue
+        if not fenced and re.match(r"^#{1,6}\s", line):
+            out.add(line.rstrip())
+    return out
+
+
+canon_phi = os.path.join(roots, "philosophy.md")
+stem_phi = os.path.join(s, "stem", "philosophy.md")
+if os.path.isfile(canon_phi):
+    if os.path.isfile(stem_phi):
+        missing = headings(canon_phi) - headings(stem_phi)
+        if missing:
+            fail.append(f"stem/philosophy.md lost canon headings: {sorted(missing)}")
+    else:
+        # deletion is not a bypass: if it ever existed in history, absence = skeleton loss.
+        # (Never-existed is fine — germination runs this checker before the philosophy talk.)
+        ever = git("log", "--oneline", "-1", "--", "stem/philosophy.md")
+        if ever.returncode == 0 and ever.stdout.strip():
+            fail.append("stem/philosophy.md deleted (canon skeleton lost)")
+
 # P4: git-history rules (each skipped gracefully when the history is too short)
 if git("rev-parse", "--verify", "-q", "HEAD").returncode == 0:
     if git("rev-list", "--merges", "HEAD").stdout.strip():
         fail.append("seedling history is not linear (merge commits present)")
-    if git("rev-parse", "--verify", "-q", "HEAD~1").returncode == 0:
+    # An apply + its exact auto-revert net to zero: tree(HEAD) == tree(HEAD~2).
+    # The HEAD~1 delta checks would see the revert "shrink" the ledgers and fail
+    # spuriously, so a cancelled pair skips them (state is unchanged by definition).
+    net_zero_pair = False
+    if git("rev-parse", "--verify", "-q", "HEAD~2").returncode == 0:
+        net_zero_pair = (git("rev-parse", "HEAD^{tree}").stdout.strip()
+                         == git("rev-parse", "HEAD~2^{tree}").stdout.strip())
+    if net_zero_pair:
+        pass
+    elif git("rev-parse", "--verify", "-q", "HEAD~1").returncode == 0:
         prev = git("show", "HEAD~1:growth-log.md")
         cur = git("show", "HEAD:growth-log.md")
         if prev.returncode == 0 and (cur.returncode != 0
@@ -60,8 +96,16 @@ if git("rev-parse", "--verify", "-q", "HEAD").returncode == 0:
                     fail.append(f"index.json entries deleted: {deleted}")
                 for eid in set(pe) & set(ce):
                     a, b = dict(pe[eid]), dict(ce[eid])
-                    a.pop("status", None), b.pop("status", None)
+                    a_status, b_status = a.pop("status", None), b.pop("status", None)
                     if a != b:
+                        # Sole exception: resolving deferred -> rejected may ADD the
+                        # rejection metadata (never rewrite fields that already existed).
+                        if b_status == "rejected" and a_status != "rejected":
+                            added = {k: v for k, v in b.items() if k not in a}
+                            kept = {k: v for k, v in b.items() if k in a}
+                            if (set(added) <= {"reason", "maturity", "evidence", "rejected_at"}
+                                    and kept == a):
+                                continue
                         fail.append(f"index.json entry {eid!r} mutated beyond status")
             except Exception as e:
                 fail.append(f"index.json monotonic check unreadable: {e}")

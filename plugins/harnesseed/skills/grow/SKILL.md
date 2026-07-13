@@ -15,48 +15,18 @@ CHECKER="$SEEDLING/roots/evals/check-invariants.sh"   # ALWAYS run the roots/ co
 
 ## Stage 0 — blueprint integrity gate (every run, before anything else)
 
-Compare the live cache against what this seedling absorbed:
-
 ```bash
 SEEDLING="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/harnesseed"
-BP="${CLAUDE_PLUGIN_ROOT}/blueprint"
-python3 - "$BP" "$SEEDLING" "${CLAUDE_PLUGIN_ROOT}" <<'PY'
-import hashlib, json, os, sys
-bp, s, plug = sys.argv[1], sys.argv[2], sys.argv[3]
-planted = json.load(open(os.path.join(s, "planted.json")))
-cache_ver = json.load(open(os.path.join(plug, ".claude-plugin/plugin.json")))["version"]
-walked = {}
-for dp, _, fns in os.walk(bp):
-    for fn in sorted(fns):
-        rel = os.path.relpath(os.path.join(dp, fn), bp)
-        walked[rel] = hashlib.sha256(open(os.path.join(dp, fn), "rb").read()).hexdigest()
-if cache_ver != planted["seed_version"]:
-    sys.exit(f"PULL-FIRST: installed seed v{cache_ver} != absorbed v{planted['seed_version']} — "
-             "run /harnesseed:pull before growing (grow must not run against an unabsorbed canon).")
-if walked != planted["blueprint"]:
-    sys.exit("TAMPER-STOP: plugin cache blueprint differs from planted.json at the SAME version — "
-             "tamper suspected. Hard stop; reinstall the plugin. Do NOT proceed.")
-print("blueprint integrity OK")
-PY
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/grow/integrity-gate.py" \
+  "${CLAUDE_PLUGIN_ROOT}/blueprint" "$SEEDLING" "${CLAUDE_PLUGIN_ROOT}"
 ```
 
-Two branches, never confused: version newer → **pull誘導して中断** (legitimate update);
-same version but hash mismatch → **tamper hard-stop** (no reinstall = no grow).
-Then pin the checker itself before trusting it:
-
-```bash
-SEEDLING="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/harnesseed"
-python3 - "$SEEDLING" <<'PY'
-import hashlib, json, os, sys
-s = sys.argv[1]
-planted = json.load(open(os.path.join(s, "planted.json")))
-rel = "evals/check-invariants.sh"
-got = hashlib.sha256(open(os.path.join(s, "roots", rel), "rb").read()).hexdigest()
-if planted["blueprint"].get(rel) != got:
-    sys.exit("TAMPER-STOP: roots checker does not match planted.json — do not run it.")
-print("checker pinned OK")
-PY
-```
+The gate (unit-tested in CI) has three outcomes — never confuse the two failure branches:
+- exit 0 `integrity OK` — proceed.
+- exit 3 `PULL-FIRST:` — installed version ≠ absorbed version (update OR rollback):
+  **pull誘導して中断**. Suggest `/harnesseed:pull` and stop this run.
+- exit 2 `TAMPER-STOP:` — same version but content mismatch, or the roots checker
+  itself is not pinned to planted.json: **hard stop** (no reinstall = no grow).
 
 ## Stage 1 — propose (structured deltas only)
 
@@ -113,8 +83,11 @@ Seed-Version: $(python3 -c "import json;print(json.load(open('$SEEDLING/planted.
 Evidence: <one line>"
 # 4. deterministic gate — THE only auto-revert trigger:
 if ! bash "$CHECKER" "$SEEDLING"; then
-  git -C "$SEEDLING" revert -q --no-edit HEAD
-  # record the auto-revert in growth-log (append) in a follow-up commit, then STOP this proposal
+  git -C "$SEEDLING" revert --no-edit HEAD   # NOTE: git revert has no -q flag
+  # The apply + its exact revert net to zero — the checker recognizes the pair
+  # (tree(HEAD) == tree(HEAD~2)) and passes, so a clean auto-revert never
+  # poisons subsequent gate runs. Record the auto-revert in growth-log (append)
+  # in a follow-up commit, then STOP this proposal.
 fi
 ```
 

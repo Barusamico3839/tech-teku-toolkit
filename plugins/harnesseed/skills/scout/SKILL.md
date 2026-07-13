@@ -53,7 +53,9 @@ const results = await pipeline(
     `WebSearch を 4〜8 本 fan-out し、primary source を WebFetch で読み込むこと(ToolSearchで両ツールをロード)。` +
     `既知エントリ(dedup対象): ${JSON.stringify(A.known)} — bundled/adopted/rejected の id は新規候補にしない。` +
     `ただし既知項目に有意変化(maturity進行・新primary source)を見つけたら updates_known_id 付きで返せ。` +
-    `rejected の再浮上は有意変化がある場合のみ。今日は ${A.runDate}。候補は最大6件、Tier順。`,
+    `known の各エントリには title/source/maturity(あれば)が入っており、rejected には reason/evidence/rejected_at も入っている — ` +
+    `再浮上の判定はその却下理由と evidence を今回の findings と突き合わせて行え(scout-angles.md の有意変化基準)。` +
+    `今日は ${A.runDate}。候補は最大6件、Tier順。`,
     { label: `angle:${key}`, phase: 'Research', schema: CANDIDATES_SCHEMA }
   ),
   (res, key) => parallel((res?.candidates || []).map(c => () =>
@@ -76,7 +78,19 @@ angle by angle. Always report which path ran.
 
 ## Stage 2 — conversational approval
 
-Present `trend-stock/summary.md` first if it exists, then the candidates tier by tier:
+**First, unconditionally re-present every deferred entry** (canon rule: 保留は無条件で次回再提示).
+Extract them with full fields from the ledger — independent of what Stage 1 found:
+
+```bash
+python3 -c "
+import json, sys
+d = json.load(open('$INDEX'))
+print(json.dumps([e for e in d['entries'] if e['status'] == 'deferred'], ensure_ascii=False, indent=1))"
+```
+
+Ask for each: 採用 / 却下(理由を聞く) / 保留継続 (保留継続 = no ledger operation).
+
+Then present `trend-stock/summary.md` if it exists, and the new candidates tier by tier:
 title, maturity, source, verified summary, and whether it updates a known entry.
 For each: 採用 / 却下(理由を聞く) / 保留. Never apply anything the user did not decide.
 
@@ -91,7 +105,11 @@ Then for each decision, build an entry JSON and apply via the ledger helper (it 
 # rejected: + "reason" (user's words), "maturity", "evidence" (verified summary)
 # deferred: status "deferred"  |  update of known entry: new id "<old>-r2" + "supersedes":"<old id>"
 python3 "$LEDGER" append "$INDEX" /tmp/entry.json
-# resolution of a previously deferred entry: python3 "$LEDGER" set-status "$INDEX" <id> adopted|rejected
+# resolving a previously deferred entry:
+#   adopt:  python3 "$LEDGER" set-status "$INDEX" <id> adopted
+#   reject: python3 "$LEDGER" set-status "$INDEX" <id> rejected "<reason>" "<evidence>" [maturity]
+#           (reason/evidence are REQUIRED — the ledger refuses a bare rejected transition;
+#            maturity only if the entry lacks one. rejected_at is stamped automatically.)
 # trailers form ONE final paragraph (single -m with literal newlines) so git
 # parses them as machine-readable trailers
 git -C "$SEEDLING" add trend-stock && git -C "$SEEDLING" commit -m "scout: $RUN_DATE run" \

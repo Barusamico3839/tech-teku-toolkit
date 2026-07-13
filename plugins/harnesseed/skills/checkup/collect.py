@@ -32,7 +32,8 @@ def collect(cfg, proj):
          "enabled_plugins": 0, "disabled_plugins": 0,
          "hooks_events": [], "output_style": None, "model": None}
     if ok and isinstance(settings, dict):
-        perms = settings.get("permissions") or {}
+        perms = settings.get("permissions")
+        perms = perms if isinstance(perms, dict) else {}
         for k in ("allow", "deny", "ask"):
             v = perms.get(k)
             s["permission_rules"][k] = len(v) if isinstance(v, list) else 0

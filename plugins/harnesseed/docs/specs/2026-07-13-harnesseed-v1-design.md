@@ -232,7 +232,9 @@ Stage 2: 承認（会話）
 
 Stage 3: 適用（スキル）
   ├─ 採用 → trend-stock/YYYY-MM-DD-scout-N.md 追記 + index.json 更新
-  │         = seedling repo に1コミット（trailer: scout-run, source, verdict）
+  │         = seedling repo に1コミット（trailer: Harnesseed-Event: scout / Scout-Run /
+  │           Seed-Version。候補別の source・verify verdict は単値 trailer で表現できない
+  │           ため、同一コミット内の run 詳細ファイルと index.json エントリに記録する）
   ├─ 却下 → index.json に status: "rejected" ＋必須フィールド
   │         （却下理由・却下日・却下時 maturity・evidence 要約）
   └─ 保留 → index.json に status: "deferred"（次回 scout で dedup 除外せず再提示する）

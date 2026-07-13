@@ -29,3 +29,6 @@ Harnesseed は tamper-proof を主張しない。ここにあるのは「grow �
    version 同一なのに hash 不一致 → tamper 疑いとして hard-stop。
 6. 受け入れ基準・invariants・チェッカーを弱める変更は、protected ファイル（planted.json・roots/）への
    diff 検出として機械的に fail する。この規則自体を緩める提案は却下される。
+7. `stem/philosophy.md` は正典（`roots/philosophy.md`）の**全見出しを保持**しなければならない
+   （見出しの追加は自由・削除は不可。ファイル削除も骨格喪失として fail）。見出し包含は
+   チェッカーが機械検査する — pull の 3-way merge は mine 側がこの骨格を保つことに依存する。

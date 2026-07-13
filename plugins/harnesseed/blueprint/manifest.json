@@ -1,15 +1,15 @@
 {
-  "seed_version": "1.0.0",
+  "seed_version": "1.0.1",
   "files": {
     "checkup-checklist.md": "8a09b5388cbfb53f4596e79cb986b1963b20f71a673d999abff1496a64931da2",
     "drift-review.md": "b39dcd29646b8831801085eb3dc08459c683f649ad2519a335bbd25982447bdc",
-    "evals/check-invariants.sh": "d903afa64438ea3fadc375b5f3ac07cb1f5f13cd4d43524157c834ef57e871fb",
+    "evals/check-invariants.sh": "c5645806efc0c1949bb988078b60f2a1eb87fc240216bbf0a30cc99fa01139b8",
     "evals/scenarios.md": "177e22fab0229331833ac4f644e4829b54c8ffc8797a0f7a6d40c7a102734183",
-    "invariants.md": "00bb7fd33dff9deba537a4d1da4cfa3ca7569dbb8cca44ba5d1423d6555a5a28",
+    "invariants.md": "80cff65551b482c84cc35f9f594dc2ec19b767ec9d7908391cf5bb47f1a71acb",
     "meta-harness.md": "48d04ab0a52597518af3d1d2195e76f9756e54b97438b3e379b99f4dee94a06b",
     "philosophy.md": "bbd126c1ec05a74657d8e459b6e05198b5654909ee24c143ed0237c2ece6061f",
     "scout-angles.md": "9fab95904c37bb9b6afd407ad77e0747b333b47b1ea4fbcbb2dc7d1760d6f6ca",
     "trend-stock/2026-06-18-trend-scout-0.md": "14886eb25c6de8e3867fca4ccad1ecaa920ede67e23005978868f228baa4f2b5",
-    "trend-stock/index-seed.json": "3d6910124a2a5a69d587d92b1db8be71e0845d8328c78e48bb9dc71573c37e06"
+    "trend-stock/index-seed.json": "8c44230faa6c7946c1282124883599ab35d9a59a4c5028c7f0da6e3946a24b9e"
   }
 }
