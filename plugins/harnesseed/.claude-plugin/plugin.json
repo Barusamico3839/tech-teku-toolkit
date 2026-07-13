@@ -1,8 +1,10 @@
 {
   "name": "harnesseed",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A harness-engineering framework that is itself built and grown by harness engineering. Germinate a seedling, articulate your harness philosophy, and keep a vetted stock of the latest harness trends.",
-  "author": { "name": "hikaru" },
+  "author": {
+    "name": "hikaru"
+  },
   "homepage": "https://github.com/Barusamico3839/tech-teku-toolkit",
   "repository": "https://github.com/Barusamico3839/tech-teku-toolkit",
   "license": "MIT"
