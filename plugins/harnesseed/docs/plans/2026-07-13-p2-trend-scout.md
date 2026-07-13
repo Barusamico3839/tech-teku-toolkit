@@ -397,8 +397,9 @@ Then for each decision, build an entry JSON and apply via the ledger helper (it 
 python3 "$LEDGER" append "$INDEX" /tmp/entry.json
 # resolution of a previously deferred entry: python3 "$LEDGER" set-status "$INDEX" <id> adopted|rejected
 git -C "$SEEDLING" add trend-stock && git -C "$SEEDLING" commit -m "scout: $RUN_DATE run" \
-  -m "Harnesseed-Event: scout" -m "Scout-Run: $RUN_ID" \
-  -m "Seed-Version: $(python3 -c "import json;print(json.load(open('$SEEDLING/planted.json'))['seed_version'])")"
+  -m "Harnesseed-Event: scout
+Scout-Run: $RUN_ID
+Seed-Version: $(python3 -c "import json;print(json.load(open('$SEEDLING/planted.json'))['seed_version'])")"
 ```
 
 If `trend-stock/summary.md` is stale or missing, offer to regenerate it (bounded: Tier-grouped,

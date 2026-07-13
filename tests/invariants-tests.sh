@@ -12,6 +12,9 @@ H="$(python3 -c "import hashlib;print(hashlib.sha256(open('$S/roots/philosophy.m
 printf '{"seed_version":"0.1.0","planted_at":"2026-07-13","blueprint":{"philosophy.md":"%s"}}' "$H" > "$S/planted.json"
 
 bash "$CHK" "$S"; check "pristine roots pass" 0 $?
+touch "$S/roots/evil.md"
+bash "$CHK" "$S" >/dev/null 2>&1; check "unexpected roots addition fails" 1 $?
+rm "$S/roots/evil.md"
 printf 'personalized!\n' >> "$S/roots/philosophy.md"
 bash "$CHK" "$S" >/dev/null 2>&1; check "tampered roots fail" 1 $?
 printf 'not json' > "$S/planted.json"

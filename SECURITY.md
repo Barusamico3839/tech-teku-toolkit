@@ -16,8 +16,10 @@ owner privately for sensitive reports).
 - **`/harnesseed:harness` skill**: runs only after you explicitly agree. It
   creates a git repository at `${CLAUDE_CONFIG_DIR:-~/.claude}/harnesseed/`
   (your seedling) and a `.harnesseed/leaf.json` marker in the project. It
-  offers — but never applies without your consent — a `.gitignore` entry and
-  an optional permission rule protecting the plugin's `blueprint/` cache.
+  offers a `.gitignore` entry (applied only with your consent) and presents an
+  optional permission rule protecting the plugin's `blueprint/` cache **as a
+  settings diff for you to apply by hand** — harnesseed itself never writes
+  `~/.claude/settings.json`.
 - **No bypass modes**: harnesseed never enables `bypassPermissions` or any
   other permission-skipping configuration, and it does not modify
   `~/.claude/settings.json`.

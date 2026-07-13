@@ -56,6 +56,7 @@ expect "no pull hint when versions match" EMPTY "$(run_hook "$P3" startup cli | 
 printf '{"seed_version":"0.0.9","planted_at":"2026-07-13"}' > "$CFG/harnesseed/planted.json"
 expect "version skew suggests pull"      "/harnesseed:pull"    "$(run_hook "$P3" startup cli)"
 expect "leaf compact pointer"            "harnessed"           "$(run_hook "$P3" compact cli)"
+expect "leaf clear pointer"              "harnessed"           "$(run_hook "$P3" clear cli)"
 
 # downgrade skew (planted/seedling absorbed a NEWER version than what's installed now)
 # -> neutral mismatch wording, no pull suggestion

@@ -19,5 +19,9 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             bash tests/version-bump-check.sh "origin/${{ github.base_ref }}"
           else
-            bash tests/version-bump-check.sh "HEAD~1" || true
+            BASE="${{ github.event.before }}"
+            if [ "$BASE" = "0000000000000000000000000000000000000000" ] || ! git rev-parse -q --verify "$BASE^{commit}" >/dev/null; then
+              BASE=origin/main
+            fi
+            bash tests/version-bump-check.sh "$BASE"
           fi

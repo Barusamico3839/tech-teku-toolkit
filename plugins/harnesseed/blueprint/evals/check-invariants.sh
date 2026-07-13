@@ -22,6 +22,13 @@ for rel, want in sorted(planted["blueprint"].items()):
     got = hashlib.sha256(open(p, "rb").read()).hexdigest()
     if got != want:
         fail.append(f"roots/{rel} hash mismatch (roots must stay pristine; only germination/pull may write it)")
+roots = os.path.join(s, "roots")
+if os.path.isdir(roots):
+    for dp, _, fns in os.walk(roots):
+        for fn in sorted(fns):
+            rel = os.path.relpath(os.path.join(dp, fn), roots)
+            if rel not in planted["blueprint"]:
+                fail.append(f"roots/{rel} not in planted.json (unexpected addition)")
 if fail:
     print("INVARIANT FAIL:"); [print("  -", f) for f in fail]; sys.exit(1)
 print(f"invariants OK (seed_version {planted['seed_version']}, {len(planted['blueprint'])} canon files pristine)")

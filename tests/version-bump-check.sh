@@ -5,7 +5,7 @@ BASE="${1:?usage: version-bump-check.sh <base-ref>}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 PLUG=plugins/harnesseed/.claude-plugin/plugin.json
-if ! git rev-parse -q --verify "$BASE" >/dev/null; then
+if ! git rev-parse -q --verify "$BASE^{commit}" >/dev/null; then
   echo "base ref $BASE not found — skipping (first push?)"; exit 0
 fi
 if git diff --quiet "$BASE"...HEAD -- plugins/harnesseed/blueprint/; then

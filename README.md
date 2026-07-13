@@ -42,6 +42,9 @@ Three directories named "harnesseed", and what each is:
 | `~/.claude/harnesseed/` | your seedling — user-level git repo, grows across projects |
 | `.harnesseed/` (in a project) | the leaf marker — per-user, add it to `.gitignore` |
 
+Note: `~/.claude/` in this README means `${CLAUDE_CONFIG_DIR:-~/.claude}` — if you have set
+`CLAUDE_CONFIG_DIR`, your seedling lives at `$CLAUDE_CONFIG_DIR/harnesseed/`.
+
 ### What germination creates
 
 A git-backed seedling: `planted.json` (which seed version you absorbed + canon hashes),

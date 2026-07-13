@@ -3,7 +3,7 @@
 # manifest = { "seed_version": <plugin.json version>, "files": { relpath: sha256 } }
 set -euo pipefail
 MODE="${1:-verify}"
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="${2:-$(cd "$(dirname "$0")/.." && pwd)}"
 python3 - "$MODE" "$ROOT" <<'PY'
 import hashlib, json, os, sys
 mode, root = sys.argv[1], sys.argv[2]

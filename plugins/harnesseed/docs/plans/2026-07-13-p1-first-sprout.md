@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **注（実装後スナップショット）**: 本プランは実装時の設計図。クリティーク#3（P1実装レビュー）の修正で、実装は本プランのコード例と一部異なる（発芽時のmanifest照合ゲート、コミットtrailerの単一段落化、マーカーのプロジェクトルート書き込み等）。**差異は実装が正**。
+
 **Goal:** Ship the harnesseed seed (plugin) inside the tech-teku-toolkit marketplace: SessionStart nudge → `/harnesseed:harness` germination → git-backed seedling (roots/stem/leaf) → philosophy conversation → bundled trend-stock #0, plus complete brainstorm-harness removal.
 
 **Architecture:** One plugin (`plugins/harnesseed/`) carrying its canon (`blueprint/`). A detect-and-inject SessionStart hook (pure bash, file checks only), a `/harnesseed:harness` skill that creates the user-level seedling git repo at `${CLAUDE_CONFIG_DIR:-~/.claude}/harnesseed/`, and deterministic CI (JSON parse, manifest hash verify, hook unit tests, version-bump consistency). Spec: `plugins/harnesseed/docs/specs/2026-07-13-harnesseed-v1-design.md` (rev.2).

@@ -78,6 +78,7 @@ tech-teku-toolkit/                       # 🌳 tree = 本家repo（main = ひ�
 │       │   ├── drift-review.md          #     P4 の drift review 基準
 │       │   ├── meta-harness.md          #     P5 で bootstrap-log から蒸留
 │       │   └── trend-stock/
+│       │       ├── index-seed.json               #   bundled 台帳の種（発芽時に status:"bundled" で index.json へ変換）
 │       │       └── 2026-06-18-trend-scout-0.md   # 静的同梱（差別化価値を初日に）
 │       ├── learn/                       #   勉強場（P5 で拡充）
 │       │   └── README.md

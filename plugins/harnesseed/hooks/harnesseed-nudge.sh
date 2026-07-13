@@ -22,7 +22,7 @@ json_field() { # file, key -> first string value
 case "$STATE" in
   declined)
     # Declined always wins when both markers are present in the same directory
-    # (the marker search below checks declined before leaf.json, so a stale
+    # (the marker search above checks declined before leaf.json, so a stale
     # leaf.json left over from a prior attempt never overrides an explicit
     # decline). This ordering is intentional.
     exit 0
@@ -48,7 +48,7 @@ case "$STATE" in
         fi
       fi
     fi
-    printf '%s\n' "[harnesseed] This project is harnessed. Seedling: $SEEDLING — read stem/philosophy.md (personal overlay) and trend-stock/summary.md if you need harness context; do NOT load the whole seedling.$HINT"
+    printf '%s\n' "[harnesseed] This project is harnessed. Seedling: $SEEDLING — read stem/philosophy.md (personal overlay) and trend-stock/summary.md (if present, else trend-stock/index.json) if you need harness context; do NOT load the whole seedling.$HINT"
     exit 0
     ;;
 esac
