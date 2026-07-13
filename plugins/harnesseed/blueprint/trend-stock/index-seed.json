@@ -1,0 +1,19 @@
+{
+  "seed_note": "trend-scout #0 (2026-06-18) の優先stockリスト。発芽時に status:'bundled' で living ledger (trend-stock/index.json) へ登録される。",
+  "entries": [
+    { "id": "misevolution-risk-register", "title": "Misevolution の risk register（trajectory監視・held-out相当のゲート・基準を緩めない hard rule）", "tier": 1, "source": "arXiv:2509.26354" },
+    { "id": "awesome-harness-taxonomy-gap", "title": "awesome-harness-engineering ~12カテゴリでの gap 分析", "tier": 1, "source": "ai-boost/awesome-harness-engineering" },
+    { "id": "dynamic-workflows-native-runtime", "title": "Dynamic Workflows を native runtime として評価（16並列/1000上限/mid-run入力不可）", "tier": 1, "source": "code.claude.com/docs" },
+    { "id": "ace-delta-update", "title": "ACE の Generator-Reflector-Curator + delta-update 規律（丸ごとrewrite禁止）", "tier": 2, "source": "ACE (2025-Q4)" },
+    { "id": "sica-overseer-gating", "title": "SICA の overseer + benchmark-gated acceptance", "tier": 2, "source": "SICA" },
+    { "id": "dgm-archive-population", "title": "Darwin Gödel Machine の archive/population 戦略（stepping-stone保持・empirical fitness）", "tier": 2, "source": "DGM/DARWIN" },
+    { "id": "skill-evolver-scope-restriction", "title": "Skill Evolver の scope-restriction governance（編集面allowlist・per-run上限・anti-pattern screen）", "tier": 2, "source": "Skill Evolver" },
+    { "id": "gepa-meta-prompting", "title": "GEPA を meta-prompting engine として採用（DSPy・Pareto frontier）", "tier": 2, "source": "GEPA/DSPy" },
+    { "id": "tiered-verification-60-30-10", "title": "Tiered verification loop（60% deterministic / 30% LLM-judge / 10% human）+ failure-log feedback", "tier": 2, "source": "community (2026-Q1/Q2)" },
+    { "id": "error-analysis-first", "title": "Hamel Husain の error-analysis-first（投機的 upfront eval に過剰投資しない）", "tier": 3, "source": "Hamel Husain" },
+    { "id": "dotfiles-as-code-claude", "title": "Dotfiles-as-code for ~/.claude（fork可能なversion管理repo化）", "tier": 3, "source": "community (2026-Q1)" },
+    { "id": "portable-skill-md", "title": "Cross-agent portable SKILL.md 標準", "tier": 3, "source": "community (2026-Q1)" },
+    { "id": "aggregator-seo-dedup", "title": "aggregator/SEO dedup（curated list を信頼 entry point に）", "tier": 3, "source": "community" },
+    { "id": "proactive-output-style", "title": "Proactive output style を worker baseline に（settings.json outputStyle）", "tier": 3, "source": "Claude Code docs" }
+  ]
+}
