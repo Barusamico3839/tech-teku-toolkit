@@ -124,10 +124,20 @@ Show the user, briefly and warmly: where the seedling lives, the tree/seed/seedl
 (one line each), what roots vs stem means (pristine canon vs their overlay), and that everything is
 a git repo they can inspect (`git -C "$SEEDLING" log`).
 
-## 3. Philosophy conversation (never from a blank page)
+## 3. Philosophy (one-time; offer the express path FIRST)
 
-Read `$SEEDLING/roots/philosophy.md`. For each stance, ask: 「Harnesseed はこう考える —（要約）。賛成？反対？修正する？」
-Write the personalized result to `$SEEDLING/stem/philosophy.md`, **keeping every heading of the canon**
+This happens ONCE per seedling — never again on later projects. Offer two paths up front:
+
+> 「philosophy（ハーネス思想）を決めます。**(a) おまかせ** — 正典をそのまま採用して先へ進む
+> （あとで /harnesseed:grow でいつでも個人化できます）/ **(b) すり合わせ** — 5つのスタンスを
+> 一緒に見て、あなた流に直しながら決める（2〜3分）」
+
+**(a) おまかせ**: copy the canon as-is — `cp "$SEEDLING/roots/philosophy.md" "$SEEDLING/stem/philosophy.md"` —
+say one line about what it stands for, and move on. Do not walk through the stances.
+**(b) すり合わせ**: read `$SEEDLING/roots/philosophy.md` and for each stance ask:
+「Harnesseed はこう考える —（要約）。賛成？反対？修正する？」
+
+Either way, write `$SEEDLING/stem/philosophy.md` **keeping every heading of the canon**
 (add under headings; do not delete headings — P4's invariant checks heading-set inclusion).
 Commit (same single-paragraph trailer form):
 
