@@ -13,4 +13,5 @@ bash "$ROOT/scripts/blueprint-manifest.sh" verify
 bash "$ROOT/tests/manifest-tests.sh"
 bash "$ROOT/tests/hook-tests.sh"
 bash "$ROOT/tests/invariants-tests.sh"
+bash "$ROOT/tests/scout-ledger-tests.sh"
 echo "ALL TEST SUITES PASSED"
