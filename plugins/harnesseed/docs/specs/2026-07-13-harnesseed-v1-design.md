@@ -407,7 +407,7 @@ P1〜P4 の bootstrap-log が揃った時点で「Harnesseed 自身がどう作�
 3. **dogfooding**: ひかるが実プロジェクト2件でハーネス化（**1件目=発芽込み、2件目=leaf 追加のみ**になること＝冪等パスの確認）。前提チェックリスト: ひかる環境の brainstorm-harness uninstall ＋ enabledPlugins/installed_plugins.json の残骸確認
 4. **declined フロー**: 「いいえ」→ `.harnesseed/declined` → 以後 nudge が出ない
 5. **CI green**: §12 の P1 分すべて
-6. **brainstorm 残骸ゼロ（機能面サーフェス限定の決定的検証）**: `plugins/brainstorm-harness/`・`install/` が不存在、README.md / marketplace.json / .github/workflows/ に brainstorm 参照なし（docs/ 配下の spec・bootstrap-log は履歴記録として除外）。marketplace.json のエントリが harnesseed 単一
+6. **brainstorm 残骸ゼロ（機能面サーフェス限定の決定的検証）**: `plugins/brainstorm-harness/`・`install/` が不存在、README.md / marketplace.json / .github/workflows/ に brainstorm 参照なし（除外は2つ: docs/ 配下の spec・bootstrap-log＝履歴記録、および README の「Migrating from brainstorm-harness」節＝§3 が必須とする移行案内）。判定コマンド: `grep -rn brainstorm README.md .claude-plugin/ .github/ | grep -v Migrating | grep -v uninstall` が exit 1。marketplace.json のエントリが harnesseed 単一。（基準改訂 2026-07-13: §3 の移行案内必須化との内部矛盾をクリティーク#4 が確認したため例外を明文化 — 経緯は bootstrap-log 参照）
 7. **docs 移設完了**: 旧 `harnesseed/` の spec・bootstrap-log が `plugins/harnesseed/docs/` に存在し、旧ディレクトリ削除済み
 8. **philosophy.md が正典として著述済み**（スタブでない: 見出し1つ以上＋manifest の hash 対象）
 9. **再実行安全**: seedling 既存＋plugin version bump 後の再ハーネスで roots/ と planted.json が変化しない（hash 比較）

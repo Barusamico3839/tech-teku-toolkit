@@ -37,6 +37,14 @@
 - **ライブ e2e**（ひかる）: 発芽（proj1）→ leaf-only（proj2）→ declined（proj3）→
   resume/subdir。実施前に `claude plugin update harnesseed@tech-teku-toolkit` で
   キャッシュを 1.0.0 へ（現在 0.1.0 のまま）
+- **受け入れ基準9（bump 後の再実行安全）の専用手順**（クリティーク#4 指摘: 基準1/3/4 と別シナリオが必要）:
+  ① proj2 の leaf-only 確認後に `sha256sum ~/.claude/harnesseed/planted.json`・
+  `find ~/.claude/harnesseed/roots -type f | xargs sha256sum`・`git -C ~/.claude/harnesseed rev-parse HEAD`
+  をスナップショット ② dev clone の plugin.json version をテスト用に bump（blueprint は触らない）→
+  `claude plugin update` → **セッション再起動** ③ **leaf の無い新規4件目プロジェクト**で
+  /harnesseed:harness（既存 proj では already-harnessed ガードで skew パスを通らないため）
+  ④ pull 実行**前に**検証: skew 警告＋pull 提案が出る / leaf は作られる / planted.json と roots/ の
+  sha256 前後一致 / HEAD 不変かつ status --porcelain 空 ⑤ テスト bump を revert、4件目を削除
 - P1 クリティーク未検証14件の resume（wf_d26813df-c4a）
 - P2〜P5 のフェーズ別クリティーク workflow ＋ 最終 whole-branch レビュー
 - ライブ機能検証: scout 実走（stock 更新を兼ねる）/ checkup 実走 / grow 1サイクル /
