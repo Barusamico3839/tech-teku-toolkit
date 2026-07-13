@@ -1,6 +1,7 @@
 {
-  "seed_version": "0.2.0",
+  "seed_version": "0.3.0",
   "files": {
+    "checkup-checklist.md": "8a09b5388cbfb53f4596e79cb986b1963b20f71a673d999abff1496a64931da2",
     "evals/check-invariants.sh": "a8fff666f653c92227978212870f240478f4fc9183f24e30355cdb00f2b1f293",
     "invariants.md": "00bb7fd33dff9deba537a4d1da4cfa3ca7569dbb8cca44ba5d1423d6555a5a28",
     "philosophy.md": "bbd126c1ec05a74657d8e459b6e05198b5654909ee24c143ed0237c2ece6061f",
